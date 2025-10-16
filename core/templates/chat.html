@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Concept Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0e27;
+            color: #e4e6eb;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: #151932;
+            border-right: 1px solid #2a2f4a;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .sidebar-header {
+            margin-bottom: 30px;
+        }
+
+        .sidebar-header h1 {
+            font-size: 24px;
+            color: #4d9eff;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-header p {
+            font-size: 13px;
+            color: #8b92b0;
+        }
+
+        .progress-section {
+            margin-bottom: 30px;
+        }
+
+        .progress-section h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+
+        .progress-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .progress-item:hover {
+            background: #1e2442;
+        }
+
+        .progress-item.active {
+            background: #1e2442;
+            border-left: 3px solid #4d9eff;
+        }
+
+        .progress-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #2a2f4a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .progress-item.active .progress-number {
+            background: #4d9eff;
+            color: #0a0e27;
+        }
+
+        .progress-info h4 {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .progress-info p {
+            font-size: 11px;
+            color: #8b92b0;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #0f1329;
+        }
+
+        .main-header {
+            padding: 20px 30px;
+            border-bottom: 1px solid #2a2f4a;
+            background: #151932;
+        }
+
+        .main-header h2 {
+            font-size: 22px;
+            margin-bottom: 5px;
+        }
+
+        .main-header p {
+            font-size: 13px;
+            color: #8b92b0;
+        }
+
+        .chat-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .chat-message {
+            display: flex;
+            gap: 15px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .bot-icon {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .user-icon {
+            background: #2a2f4a;
+        }
+
+        .message-content {
+            flex: 1;
+            background: #1a1f3a;
+            padding: 18px 20px;
+            border-radius: 12px;
+            border: 1px solid #2a2f4a;
+            line-height: 1.6;
+        }
+
+        .user-message .message-content {
+            background: #2a2f4a;
+        }
+
+        .editable-box {
+            background: #151932;
+            border: 1px solid #2a2f4a;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            position: relative;
+        }
+
+        .edit-btn-icon {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #4d9eff;
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+
+        .edit-btn-icon:hover {
+            transform: scale(1.1);
+        }
+
+        .edit-textarea {
+            width: 100%;
+            min-height: 250px;
+            background: #0f1329;
+            border: 2px solid #4d9eff;
+            border-radius: 8px;
+            padding: 15px;
+            color: #e4e6eb;
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: vertical;
+        }
+
+        .edit-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background: #4d9eff;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #2a2f4a;
+            color: #e4e6eb;
+        }
+
+        .btn-success {
+            background: #00c853;
+            color: white;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .action-btn {
+            padding: 10px 18px;
+            background: transparent;
+            border: 2px solid #4d9eff;
+            color: #4d9eff;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .action-btn:hover {
+            background: #4d9eff;
+            color: white;
+        }
+
+        .right-sidebar {
+            width: 350px;
+            background: #151932;
+            border-left: 1px solid #2a2f4a;
+            padding: 25px;
+            overflow-y: auto;
+        }
+
+        .right-sidebar h3 {
+            font-size: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upload-section {
+            margin-bottom: 25px;
+        }
+
+        .upload-area {
+            border: 2px dashed #2a2f4a;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 15px;
+        }
+
+        .upload-area:hover {
+            border-color: #4d9eff;
+            background: #1a1f3a;
+        }
+
+        .upload-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .upload-area p {
+            color: #8b92b0;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .uploaded-file {
+            background: #1a1f3a;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .uploaded-file .remove-btn {
+            margin-left: auto;
+            background: #ff4444;
+            color: white;
+            border: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .products-list {
+            margin-top: 25px;
+        }
+
+        .products-list h4 {
+            font-size: 14px;
+            margin-bottom: 15px;
+            color: #8b92b0;
+        }
+
+        .product-item {
+            background: #1a1f3a;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .product-item:hover {
+            background: #2a2f4a;
+        }
+
+        .product-item.selected {
+            border-color: #4d9eff;
+            background: #1e2442;
+        }
+
+        .product-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .product-item label {
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .input-area {
+            padding: 20px 30px;
+            background: #151932;
+            border-top: 1px solid #2a2f4a;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .input-field {
+            flex: 1;
+            background: #1a1f3a;
+            border: 2px solid #2a2f4a;
+            border-radius: 12px;
+            padding: 12px 18px;
+            color: #e4e6eb;
+            font-family: inherit;
+            font-size: 14px;
+            resize: none;
+            min-height: 50px;
+            max-height: 120px;
+            transition: border-color 0.3s;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #4d9eff;
+        }
+
+        .send-btn {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            transform: scale(1.05);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 15px;
+            background: #1a1f3a;
+            border-radius: 12px;
+            width: fit-content;
+        }
+
+        .typing-indicator.active {
+            display: flex;
+            gap: 6px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #4d9eff;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-8px); }
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #151932;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #2a2f4a;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4d9eff;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 14, 39, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #2a2f4a;
+            border-top-color: #4d9eff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Left Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>AI Concept Generator</h1>
+            <p>Transform ideas into professional concepts</p>
+        </div>
+
+        <div class="progress-section">
+            <h3>Project Progress</h3>
+            <div class="progress-item active" id="step1">
+                <div class="progress-number">1</div>
+                <div class="progress-info">
+                    <h4>Idea Input</h4>
+                    <p>Describe your initial concept</p>
+                </div>
+            </div>
+            <div class="progress-item" id="step2">
+                <div class="progress-number">2</div>
+                <div class="progress-info">
+                    <h4>Clarification</h4>
+                    <p>Answer key questions</p>
+                </div>
+            </div>
+            <div class="progress-item" id="step3">
+                <div class="progress-number">3</div>
+                <div class="progress-info">
+                    <h4>Solution Mapping</h4>
+                    <p>Find internal solutions</p>
+                </div>
+            </div>
+            <div class="progress-item" id="step4">
+                <div class="progress-number">4</div>
+                <div class="progress-info">
+                    <h4>Concept Generation</h4>
+                    <p>Create final concept note</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="main-header">
+            <h2>Concept Generation Assistant</h2>
+            <p>I'll help you transform your ideas into professional concept notes</p>
+        </div>
+
+        <div class="chat-area" id="chatArea">
+            <div class="chat-message">
+                <div class="message-icon bot-icon">🤖</div>
+                <div class="message-content">
+                    <strong>👋 Hello! I'm your Concept Generation Assistant.</strong><br><br>
+                    I can help you transform your raw ideas into professional concept notes with structured planning, clarification questions, and solution mapping.<br><br>
+                    <strong>To get started:</strong><br>
+                    • Describe your project idea below<br>
+                    • Or upload a PDF/Audio file with client requirements (right panel)<br>
+                    • Include any key points you want emphasized
+                </div>
+            </div>
+
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div class="input-wrapper">
+                <textarea 
+                    id="userInput" 
+                    class="input-field" 
+                    placeholder="Describe your project idea..."
+                    rows="1"></textarea>
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                    ➤
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Sidebar -->
+    <div class="right-sidebar">
+        <h3>📋 Project Requirements</h3>
+        
+        <!-- PDF Upload -->
+        <div class="upload-section">
+            <div class="upload-area" onclick="document.getElementById('pdfInput').click()">
+                <div class="upload-icon">📄</div>
+                <p>Upload Client Requirements (PDF)</p>
+                <button class="btn btn-primary" style="font-size: 12px; padding: 8px 16px;">Choose PDF</button>
+            </div>
+            <input type="file" id="pdfInput" class="file-input" accept=".pdf" onchange="handlePDFUpload(event)">
+            <div id="pdfUploadStatus"></div>
+        </div>
+
+        <!-- Audio Upload -->
+        <div class="upload-section">
+            <div class="upload-area" onclick="document.getElementById('audioInput').click()">
+                <div class="upload-icon">🎤</div>
+                <p>Upload Audio Requirements</p>
+                <button class="btn btn-primary" style="font-size: 12px; padding: 8px 16px;">Choose Audio</button>
+            </div>
+            <input type="file" id="audioInput" class="file-input" accept=".mp3,.wav,.m4a,.flac,.aac,.ogg" onchange="handleAudioUpload(event)">
+            <div id="audioUploadStatus"></div>
+        </div>
+
+        <!-- Products List -->
+        <div class="products-list">
+            <h4>Available Internal Products</h4>
+            <div id="productsList">
+                <div style="text-align: center; color: #8b92b0; padding: 20px;">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let sessionId = null;
+        let conversationState = 'initial';
+        let currentPreview = '';
+        let internalRecommendations = [];
+        let externalRecommendations = [];
+        let selectedInternal = [];
+        let selectedExternal = [];
+        let selectedProducts = [];
+        let allProducts = [];
+
+        const chatArea = document.getElementById('chatArea');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+
+        window.onload = async () => {
+            userInput.focus();
+            await loadProducts();
+        };
+
+        async function loadProducts() {
+            try {
+                const response = await fetch('/api/get-products/');
+                const data = await response.json();
+                
+                allProducts = data.products;
+                const productsList = document.getElementById('productsList');
+                
+                if (allProducts.length === 0) {
+                    productsList.innerHTML = '<div style="text-align: center; color: #8b92b0; padding: 20px;">No products available</div>';
+                    return;
+                }
+                
+                productsList.innerHTML = '';
+                allProducts.forEach(product => {
+                    const div = document.createElement('div');
+                    div.className = 'product-item';
+                    div.id = `product-${product.id}`;
+                    div.innerHTML = `
+                        <input type="checkbox" id="check-${product.id}" onchange="toggleProduct(${product.id})">
+                        <label for="check-${product.id}">${product.name}</label>
+                    `;
+                    productsList.appendChild(div);
+                });
+            } catch (error) {
+                console.error('Error loading products:', error);
+                document.getElementById('productsList').innerHTML = 
+                    '<div style="text-align: center; color: #ff4444; padding: 20px;">Error loading products</div>';
+            }
+        }
+
+        function toggleProduct(productId) {
+            const checkbox = document.getElementById(`check-${productId}`);
+            const productDiv = document.getElementById(`product-${productId}`);
+            
+            if (checkbox.checked) {
+                selectedProducts.push(productId);
+                productDiv.classList.add('selected');
+            } else {
+                selectedProducts = selectedProducts.filter(id => id !== productId);
+                productDiv.classList.remove('selected');
+            }
+        }
+
+        async function handlePDFUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const statusDiv = document.getElementById('pdfUploadStatus');
+            statusDiv.innerHTML = '<div class="uploaded-file">📄 Uploading...</div>';
+            
+            showLoading(true);
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const response = await fetch('/api/upload-file/', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusDiv.innerHTML = `
+                        <div class="uploaded-file">
+                            📄 ${data.filename}
+                            <button class="remove-btn" onclick="clearPDFUpload()">×</button>
+                        </div>
+                    `;
+                    
+                    // Auto-fill text input with extracted text
+                    userInput.value = data.extracted_text;
+                    userInput.style.height = 'auto';
+                    userInput.style.height = userInput.scrollHeight + 'px';
+                    
+                    addMessage('✓ PDF uploaded and text extracted!', true);
+                } else {
+                    statusDiv.innerHTML = `<div style="color: #ff4444; font-size: 12px;">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div style="color: #ff4444; font-size: 12px;">Upload failed: ${error.message}</div>`;
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function handleAudioUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const statusDiv = document.getElementById('audioUploadStatus');
+            statusDiv.innerHTML = '<div class="uploaded-file">🎤 Transcribing...</div>';
+            
+            showLoading(true);
+            
+            try {
+                const formData = new FormData();
+                formData.append('audio', file);
+                
+                const response = await fetch('/api/upload-audio/', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusDiv.innerHTML = `
+                        <div class="uploaded-file">
+                            🎤 ${data.filename}
+                            <button class="remove-btn" onclick="clearAudioUpload()">×</button>
+                        </div>
+                    `;
+                    
+                    // Auto-fill text input with transcribed text
+                    userInput.value = data.transcribed_text;
+                    userInput.style.height = 'auto';
+                    userInput.style.height = userInput.scrollHeight + 'px';
+                    
+                    addMessage('✓ Audio transcribed successfully!', true);
+                } else {
+                    statusDiv.innerHTML = `<div style="color: #ff4444; font-size: 12px;">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div style="color: #ff4444; font-size: 12px;">Transcription failed: ${error.message}</div>`;
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function clearPDFUpload() {
+            document.getElementById('pdfInput').value = '';
+            document.getElementById('pdfUploadStatus').innerHTML = '';
+        }
+
+        function clearAudioUpload() {
+            document.getElementById('audioInput').value = '';
+            document.getElementById('audioUploadStatus').innerHTML = '';
+        }
+
+        function showLoading(show) {
+            loadingOverlay.classList.toggle('active', show);
+        }
+
+        userInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
+        userInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        function updateProgressStep(step) {
+            document.querySelectorAll('.progress-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.getElementById(`step${step}`)?.classList.add('active');
+        }
+
+        function addMessage(content, isBot = false, isHtml = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${isBot ? '' : 'user-message'}`;
+            
+            messageDiv.innerHTML = `
+                <div class="message-icon ${isBot ? 'bot-icon' : 'user-icon'}">
+                    ${isBot ? '🤖' : '👤'}
+                </div>
+                <div class="message-content">
+                    ${isHtml ? content : escapeHtml(content)}
+                </div>
+            `;
+            
+            chatArea.insertBefore(messageDiv, typingIndicator);
+            scrollToBottom();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function addEditableContent(content, onSave) {
+            const id = 'edit_' + Date.now();
+            const formatted = formatContent(content);
+            
+            const html = `
+                <div class="editable-box" id="${id}">
+                    <button class="edit-btn-icon" onclick="startEdit('${id}')">✎</button>
+                    <div class="content-display">${formatted}</div>
+                    <div class="content-editor" style="display: none;">
+                        <textarea class="edit-textarea">${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
+                        <div class="edit-actions">
+                            <button class="btn btn-success" onclick="saveEdit('${id}')">✓ Save Changes</button>
+                            <button class="btn btn-secondary" onclick="cancelEdit('${id}')">✗ Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            addMessage(html, true, true);
+            window['onSave_' + id] = onSave;
+        }
+
+        function formatContent(text) {
+            if (!text) return '';
+            let formatted = escapeHtml(text);
+            formatted = formatted.replace(/([A-Z\s&:]{3,})\n────+/g, 
+                '<div style="color: #4d9eff; font-size: 16px; font-weight: bold; margin: 20px 0 12px 0; padding-bottom: 8px; border-bottom: 2px solid #2a2f4a;">$1</div>');
+            formatted = formatted.replace(/^• (.+)$/gm, 
+                '<div style="margin-left: 15px; margin-bottom: 8px;">• $1</div>');
+            formatted = formatted.replace(/\n\n/g, '<br><br>');
+            formatted = formatted.replace(/\n/g, '<br>');
+            return formatted;
+        }
+
+        function startEdit(id) {
+            const box = document.getElementById(id);
+            if (!box) return;
+            box.querySelector('.content-display').style.display = 'none';
+            box.querySelector('.content-editor').style.display = 'block';
+            box.querySelector('.edit-btn-icon').style.display = 'none';
+            box.querySelector('.edit-textarea').focus();
+        }
+
+        function cancelEdit(id) {
+            const box = document.getElementById(id);
+            if (!box) return;
+            box.querySelector('.content-display').style.display = 'block';
+            box.querySelector('.content-editor').style.display = 'none';
+            box.querySelector('.edit-btn-icon').style.display = 'block';
+        }
+
+        async function saveEdit(id) {
+            const box = document.getElementById(id);
+            if (!box) return;
+            const newContent = box.querySelector('.edit-textarea').value.trim();
+            if (!newContent) {
+                alert('Content cannot be empty!');
+                return;
+            }
+            box.querySelector('.content-display').innerHTML = formatContent(newContent);
+            cancelEdit(id);
+            const callback = window['onSave_' + id];
+            if (callback) {
+                addMessage('✓ Updated', false);
+                showTyping(true);
+                await callback(newContent);
+                showTyping(false);
+            }
+        }
+
+        function showTyping(show) {
+            typingIndicator.classList.toggle('active', show);
+            if (show) scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            setTimeout(() => {
+                chatArea.scrollTop = chatArea.scrollHeight;
+            }, 100);
+        }
+
+        function disableInput(disabled) {
+            userInput.disabled = disabled;
+            sendBtn.disabled = disabled;
+        }
+
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            addMessage(message, false);
+            userInput.value = '';
+            userInput.style.height = 'auto';
+            disableInput(true);
+            showTyping(true);
+
+            try {
+                if (conversationState === 'initial') {
+                    await handleInitialInput(message);
+                } else if (conversationState === 'clarifications') {
+                    await handleClarificationAnswer(message);
+                }
+            } catch (error) {
+                showTyping(false);
+                addMessage('Sorry, something went wrong: ' + error.message, true);
+                console.error(error);
+            } finally {
+                showTyping(false);
+                disableInput(false);
+                userInput.focus();
+            }
+        }
+
+        async function handleInitialInput(input) {
+            const response = await fetch('/api/generate-preview/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ raw_input: input, highlight_points: '' })
+            });
+
+            const data = await response.json();
+            sessionId = data.session_id;
+            currentPreview = data.preview;
+
+            addMessage('Great! I\'ve created a detailed preview:', true);
+            
+            addEditableContent(data.preview, async (newContent) => {
+                currentPreview = newContent;
+                addMessage('Preview updated!', true);
+            });
+            
+            const actionsHtml = `
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="acceptPreview()">✓ Looks Good, Continue</button>
+                </div>
+            `;
+            addMessage(actionsHtml, true, true);
+            
+            conversationState = 'preview_shown';
+        }
+
+        async function acceptPreview() {
+            addMessage('Preview approved', false);
+            updateProgressStep(2);
+            conversationState = 'clarifications';
+            showTyping(true);
+            await askClarification();
+            showTyping(false);
+        }
+
+        async function askClarification() {
+            try {
+                const response = await fetch('/api/get-clarifications/', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({session_id: sessionId})
+                });
+
+                const data = await response.json();
+                
+                if (data.questions && data.questions.includes('NO_MORE_QUESTIONS')) {
+                    addMessage('Perfect! I have all the information I need. Let me find solutions...', true);
+                    updateProgressStep(3);
+                    showTyping(true);
+                    await loadRecommendations();
+                    showTyping(false);
+                    return;
+                }
+
+                addMessage(`❓ ${data.questions}`, true);
+                conversationState = 'clarifications';
+            } catch (error) {
+                console.error('Error getting clarifications:', error);
+                addMessage('Moving to recommendations...', true);
+                await loadRecommendations();
+            }
+        }
+
+        async function handleClarificationAnswer(answer) {
+            const allMessages = Array.from(chatArea.querySelectorAll('.message-content'));
+            let question = 'Question';
+            
+            for (let i = allMessages.length - 1; i >= 0; i--) {
+                const text = allMessages[i].textContent;
+                if (text && text.includes('❓')) {
+                    question = text.replace('❓', '').trim();
+                    break;
+                }
+            }
+            
+            try {
+                await fetch('/api/save-clarification/', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ session_id: sessionId, question: question, answer: answer })
+                });
+
+                addMessage('Thank you! Checking if I need more info...', true);
+                showTyping(true);
+                await askClarification();
+                showTyping(false);
+            } catch (error) {
+                console.error('Error:', error);
+                await loadRecommendations();
+            }
+        }
+
+        async function loadRecommendations() {
+            try {
+                const response = await fetch('/api/get-recommendations/', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({session_id: sessionId})
+                });
+
+                const data = await response.json();
+
+                addMessage('Based on your requirements, here are my recommendations:', true);
+
+                let internalText = typeof data.internal === 'string' ? data.internal : String(data.internal || '');
+                let externalText = typeof data.external === 'string' ? data.external : String(data.external || '');
+
+                internalRecommendations = internalText.split('\n').filter(l => l.trim());
+                externalRecommendations = externalText.split('\n').filter(l => l.trim());
+                
+                selectedInternal = [...internalRecommendations];
+                selectedExternal = [...externalRecommendations];
+
+                // Add user-selected products
+                if (selectedProducts.length > 0) {
+                    const selectedProductNames = allProducts
+                        .filter(p => selectedProducts.includes(p.id))
+                        .map(p => `${p.name} - Manually selected by user`);
+                    
+                    addMessage('<strong>📦 Your Selected Products:</strong>', true, true);
+                    addMessage(selectedProductNames.join('\n'), true);
+                }
+
+                if (internalRecommendations.length > 0) {
+                    addMessage('<strong>🏢 AI Recommended Internal Solutions:</strong>', true, true);
+                    addEditableContent(internalRecommendations.join('\n'), async (newContent) => {
+                        internalRecommendations = newContent.split('\n').filter(l => l.trim());
+                        selectedInternal = [...internalRecommendations];
+                        addMessage('Internal recommendations updated!', true);
+                    });
+                }
+
+                if (externalRecommendations.length > 0) {
+                    addMessage('<strong>🌐 External Technologies:</strong>', true, true);
+                    addEditableContent(externalRecommendations.join('\n'), async (newContent) => {
+                        externalRecommendations = newContent.split('\n').filter(l => l.trim());
+                        selectedExternal = [...externalRecommendations];
+                        addMessage('External recommendations updated!', true);
+                    });
+                }
+
+                const finalBtnHtml = `
+                    <div class="action-buttons">
+                        <button class="action-btn" onclick="generateFinalNote()">📄 Generate Concept Note</button>
+                    </div>
+                `;
+                addMessage(finalBtnHtml, true, true);
+                
+                conversationState = 'recommendations_shown';
+            } catch (error) {
+                console.error('Error:', error);
+                addMessage('Error loading recommendations: ' + error.message, true);
+            }
+        }
+
+        async function generateFinalNote() {
+            addMessage('Generate concept note', false);
+            updateProgressStep(4);
+            showTyping(true);
+            disableInput(true);
+
+            try {
+                // Include user-selected products in final note
+                const userSelectedProducts = allProducts
+                    .filter(p => selectedProducts.includes(p.id))
+                    .map(p => p.name);
+                
+                const allInternalSolutions = [...new Set([...userSelectedProducts, ...selectedInternal])];
+
+                const response = await fetch('/api/generate-final-note/', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        selected_internal: allInternalSolutions,
+                        selected_external: selectedExternal
+                    })
+                });
+
+                const data = await response.json();
+                showTyping(false);
+
+                addMessage('🎉 Your concept note is ready!', true);
+                
+                addEditableContent(data.concept_note, async (newContent) => {
+                    window.finalConceptNote = newContent;
+                    addMessage('Concept note updated!', true);
+                });
+                
+                window.finalConceptNote = data.concept_note;
+                
+                const actionsHtml = `
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button class="btn btn-success" onclick="downloadPDF()">⬇ Download PDF</button>
+                        <button class="btn btn-secondary" onclick="location.reload()">🔄 New Project</button>
+                    </div>
+                `;
+                addMessage(actionsHtml, true, true);
+                
+                conversationState = 'completed';
+            } catch (error) {
+                console.error('Error:', error);
+                showTyping(false);
+                addMessage('Error generating concept note: ' + error.message, true);
+            } finally {
+                disableInput(false);
+            }
+        }
+
+        async function downloadPDF() {
+            if (!window.finalConceptNote || !sessionId) {
+                alert('No concept note available to download!');
+                return;
+            }
+
+            showLoading(true);
+            
+            try {
+                const response = await fetch('/api/download-pdf/', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        concept_note: window.finalConceptNote
+                    })
+                });
+
+                if (response.ok) {
+                    // Create blob from response
+                    const blob = await response.blob();
+                    
+                    // Create download link
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `concept_note_${sessionId}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    
+                    // Cleanup
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    addMessage('✓ PDF downloaded successfully!', true);
+                } else {
+                    throw new Error('PDF generation failed');
+                }
+            } catch (error) {
+                console.error('Error downloading PDF:', error);
+                alert('Error downloading PDF: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+    </script>
+</body>
+</html>
