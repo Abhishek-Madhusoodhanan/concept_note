@@ -16,6 +16,13 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  # Load environment variables from .env
+
+GEMINI_API_KEY = os.getenv('GOOGLE_API_KEY')
+
 
 
 # Quick-start development settings - unsuitable for production
@@ -122,4 +129,3 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Load Gemini API key from environment variables
-GEMINI_API_KEY = config('GEMINI_API_KEY')

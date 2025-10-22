@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -142,8 +143,15 @@
         }
 
         @keyframes slideIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .message-icon {
@@ -476,12 +484,25 @@
             animation: typing 1.4s infinite;
         }
 
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
 
         @keyframes typing {
-            0%, 60%, 100% { transform: translateY(0); }
-            30% { transform: translateY(-8px); }
+
+            0%,
+            60%,
+            100% {
+                transform: translateY(0);
+            }
+
+            30% {
+                transform: translateY(-8px);
+            }
         }
 
         ::-webkit-scrollbar {
@@ -529,10 +550,13 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
     </style>
 </head>
+
 <body>
     <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay">
@@ -591,7 +615,8 @@
                 <div class="message-icon bot-icon">🤖</div>
                 <div class="message-content">
                     <strong>👋 Hello! I'm your Concept Generation Assistant.</strong><br><br>
-                    I can help you transform your raw ideas into professional concept notes with structured planning, clarification questions, and solution mapping.<br><br>
+                    I can help you transform your raw ideas into professional concept notes with structured planning,
+                    clarification questions, and solution mapping.<br><br>
                     <strong>To get started:</strong><br>
                     • Describe your project idea below<br>
                     • Or upload a PDF/Audio file with client requirements (right panel)<br>
@@ -608,10 +633,7 @@
 
         <div class="input-area">
             <div class="input-wrapper">
-                <textarea 
-                    id="userInput" 
-                    class="input-field" 
-                    placeholder="Describe your project idea..."
+                <textarea id="userInput" class="input-field" placeholder="Describe your project idea..."
                     rows="1"></textarea>
                 <button class="send-btn" id="sendBtn" onclick="sendMessage()">
                     ➤
@@ -622,13 +644,13 @@
 
     <!-- Right Sidebar -->
     <div class="right-sidebar">
-        <h3>📋 Project Requirements</h3>
-        
+        <h3> Project Requirements</h3>
+
         <!-- PDF Upload -->
         <div class="upload-section">
             <div class="upload-area" onclick="document.getElementById('pdfInput').click()">
                 <div class="upload-icon">📄</div>
-                <p>Upload Client Requirements (PDF)</p>
+                <p>Upload Client Requirements </p>
                 <button class="btn btn-primary" style="font-size: 12px; padding: 8px 16px;">Choose PDF</button>
             </div>
             <input type="file" id="pdfInput" class="file-input" accept=".pdf" onchange="handlePDFUpload(event)">
@@ -642,7 +664,8 @@
                 <p>Upload Audio Requirements</p>
                 <button class="btn btn-primary" style="font-size: 12px; padding: 8px 16px;">Choose Audio</button>
             </div>
-            <input type="file" id="audioInput" class="file-input" accept=".mp3,.wav,.m4a,.flac,.aac,.ogg" onchange="handleAudioUpload(event)">
+            <input type="file" id="audioInput" class="file-input" accept=".mp3,.wav,.m4a,.flac,.aac,.ogg"
+                onchange="handleAudioUpload(event)">
             <div id="audioUploadStatus"></div>
         </div>
 
@@ -681,15 +704,15 @@
             try {
                 const response = await fetch('/api/get-products/');
                 const data = await response.json();
-                
+
                 allProducts = data.products;
                 const productsList = document.getElementById('productsList');
-                
+
                 if (allProducts.length === 0) {
                     productsList.innerHTML = '<div style="text-align: center; color: #8b92b0; padding: 20px;">No products available</div>';
                     return;
                 }
-                
+
                 productsList.innerHTML = '';
                 allProducts.forEach(product => {
                     const div = document.createElement('div');
@@ -703,7 +726,7 @@
                 });
             } catch (error) {
                 console.error('Error loading products:', error);
-                document.getElementById('productsList').innerHTML = 
+                document.getElementById('productsList').innerHTML =
                     '<div style="text-align: center; color: #ff4444; padding: 20px;">Error loading products</div>';
             }
         }
@@ -711,7 +734,7 @@
         function toggleProduct(productId) {
             const checkbox = document.getElementById(`check-${productId}`);
             const productDiv = document.getElementById(`product-${productId}`);
-            
+
             if (checkbox.checked) {
                 selectedProducts.push(productId);
                 productDiv.classList.add('selected');
@@ -724,23 +747,23 @@
         async function handlePDFUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
-            
+
             const statusDiv = document.getElementById('pdfUploadStatus');
             statusDiv.innerHTML = '<div class="uploaded-file">📄 Uploading...</div>';
-            
+
             showLoading(true);
-            
+
             try {
                 const formData = new FormData();
                 formData.append('file', file);
-                
+
                 const response = await fetch('/api/upload-file/', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     statusDiv.innerHTML = `
                         <div class="uploaded-file">
@@ -748,12 +771,12 @@
                             <button class="remove-btn" onclick="clearPDFUpload()">×</button>
                         </div>
                     `;
-                    
+
                     // Auto-fill text input with extracted text
                     userInput.value = data.extracted_text;
                     userInput.style.height = 'auto';
                     userInput.style.height = userInput.scrollHeight + 'px';
-                    
+
                     addMessage('✓ PDF uploaded and text extracted!', true);
                 } else {
                     statusDiv.innerHTML = `<div style="color: #ff4444; font-size: 12px;">Error: ${data.error}</div>`;
@@ -768,23 +791,23 @@
         async function handleAudioUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
-            
+
             const statusDiv = document.getElementById('audioUploadStatus');
             statusDiv.innerHTML = '<div class="uploaded-file">🎤 Transcribing...</div>';
-            
+
             showLoading(true);
-            
+
             try {
                 const formData = new FormData();
                 formData.append('audio', file);
-                
+
                 const response = await fetch('/api/upload-audio/', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     statusDiv.innerHTML = `
                         <div class="uploaded-file">
@@ -792,12 +815,12 @@
                             <button class="remove-btn" onclick="clearAudioUpload()">×</button>
                         </div>
                     `;
-                    
+
                     // Auto-fill text input with transcribed text
                     userInput.value = data.transcribed_text;
                     userInput.style.height = 'auto';
                     userInput.style.height = userInput.scrollHeight + 'px';
-                    
+
                     addMessage('✓ Audio transcribed successfully!', true);
                 } else {
                     statusDiv.innerHTML = `<div style="color: #ff4444; font-size: 12px;">Error: ${data.error}</div>`;
@@ -823,12 +846,12 @@
             loadingOverlay.classList.toggle('active', show);
         }
 
-        userInput.addEventListener('input', function() {
+        userInput.addEventListener('input', function () {
             this.style.height = 'auto';
             this.style.height = (this.scrollHeight) + 'px';
         });
 
-        userInput.addEventListener('keydown', function(e) {
+        userInput.addEventListener('keydown', function (e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 sendMessage();
@@ -845,7 +868,7 @@
         function addMessage(content, isBot = false, isHtml = false) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `chat-message ${isBot ? '' : 'user-message'}`;
-            
+
             messageDiv.innerHTML = `
                 <div class="message-icon ${isBot ? 'bot-icon' : 'user-icon'}">
                     ${isBot ? '🤖' : '👤'}
@@ -854,7 +877,7 @@
                     ${isHtml ? content : escapeHtml(content)}
                 </div>
             `;
-            
+
             chatArea.insertBefore(messageDiv, typingIndicator);
             scrollToBottom();
         }
@@ -868,7 +891,7 @@
         function addEditableContent(content, onSave) {
             const id = 'edit_' + Date.now();
             const formatted = formatContent(content);
-            
+
             const html = `
                 <div class="editable-box" id="${id}">
                     <button class="edit-btn-icon" onclick="startEdit('${id}')">✎</button>
@@ -882,7 +905,7 @@
                     </div>
                 </div>
             `;
-            
+
             addMessage(html, true, true);
             window['onSave_' + id] = onSave;
         }
@@ -890,9 +913,9 @@
         function formatContent(text) {
             if (!text) return '';
             let formatted = escapeHtml(text);
-            formatted = formatted.replace(/([A-Z\s&:]{3,})\n────+/g, 
+            formatted = formatted.replace(/([A-Z\s&:]{3,})\n────+/g,
                 '<div style="color: #4d9eff; font-size: 16px; font-weight: bold; margin: 20px 0 12px 0; padding-bottom: 8px; border-bottom: 2px solid #2a2f4a;">$1</div>');
-            formatted = formatted.replace(/^• (.+)$/gm, 
+            formatted = formatted.replace(/^• (.+)$/gm,
                 '<div style="margin-left: 15px; margin-bottom: 8px;">• $1</div>');
             formatted = formatted.replace(/\n\n/g, '<br><br>');
             formatted = formatted.replace(/\n/g, '<br>');
@@ -929,7 +952,7 @@
             const callback = window['onSave_' + id];
             if (callback) {
                 addMessage('✓ Updated', false);
-                showTyping(true);
+                showTyping(true)
                 await callback(newContent);
                 showTyping(false);
             }
@@ -981,28 +1004,34 @@
         async function handleInitialInput(input) {
             const response = await fetch('/api/generate-preview/', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ raw_input: input, highlight_points: '' })
             });
 
             const data = await response.json();
+            if (data.error || typeof data.preview === 'undefined') {
+                const errorMessage = data.error || 'An unknown error occurred.';
+                addMessage(`Sorry, something went wrong: ${errorMessage}`, true);
+                console.error('Backend Error:', data);
+                return; // Stop execution
+            }
             sessionId = data.session_id;
             currentPreview = data.preview;
 
             addMessage('Great! I\'ve created a detailed preview:', true);
-            
+
             addEditableContent(data.preview, async (newContent) => {
                 currentPreview = newContent;
                 addMessage('Preview updated!', true);
             });
-            
+
             const actionsHtml = `
                 <div class="action-buttons">
                     <button class="action-btn" onclick="acceptPreview()">✓ Looks Good, Continue</button>
                 </div>
             `;
             addMessage(actionsHtml, true, true);
-            
+
             conversationState = 'preview_shown';
         }
 
@@ -1019,12 +1048,12 @@
             try {
                 const response = await fetch('/api/get-clarifications/', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({session_id: sessionId})
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: sessionId })
                 });
 
                 const data = await response.json();
-                
+
                 if (data.questions && data.questions.includes('NO_MORE_QUESTIONS')) {
                     addMessage('Perfect! I have all the information I need. Let me find solutions...', true);
                     updateProgressStep(3);
@@ -1046,7 +1075,7 @@
         async function handleClarificationAnswer(answer) {
             const allMessages = Array.from(chatArea.querySelectorAll('.message-content'));
             let question = 'Question';
-            
+
             for (let i = allMessages.length - 1; i >= 0; i--) {
                 const text = allMessages[i].textContent;
                 if (text && text.includes('❓')) {
@@ -1054,11 +1083,11 @@
                     break;
                 }
             }
-            
+
             try {
                 await fetch('/api/save-clarification/', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ session_id: sessionId, question: question, answer: answer })
                 });
 
@@ -1076,8 +1105,8 @@
             try {
                 const response = await fetch('/api/get-recommendations/', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({session_id: sessionId})
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: sessionId })
                 });
 
                 const data = await response.json();
@@ -1089,7 +1118,7 @@
 
                 internalRecommendations = internalText.split('\n').filter(l => l.trim());
                 externalRecommendations = externalText.split('\n').filter(l => l.trim());
-                
+
                 selectedInternal = [...internalRecommendations];
                 selectedExternal = [...externalRecommendations];
 
@@ -1098,7 +1127,7 @@
                     const selectedProductNames = allProducts
                         .filter(p => selectedProducts.includes(p.id))
                         .map(p => `${p.name} - Manually selected by user`);
-                    
+
                     addMessage('<strong>📦 Your Selected Products:</strong>', true, true);
                     addMessage(selectedProductNames.join('\n'), true);
                 }
@@ -1127,7 +1156,7 @@
                     </div>
                 `;
                 addMessage(finalBtnHtml, true, true);
-                
+
                 conversationState = 'recommendations_shown';
             } catch (error) {
                 console.error('Error:', error);
@@ -1146,12 +1175,12 @@
                 const userSelectedProducts = allProducts
                     .filter(p => selectedProducts.includes(p.id))
                     .map(p => p.name);
-                
+
                 const allInternalSolutions = [...new Set([...userSelectedProducts, ...selectedInternal])];
 
                 const response = await fetch('/api/generate-final-note/', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         session_id: sessionId,
                         selected_internal: allInternalSolutions,
@@ -1163,14 +1192,14 @@
                 showTyping(false);
 
                 addMessage('🎉 Your concept note is ready!', true);
-                
+
                 addEditableContent(data.concept_note, async (newContent) => {
                     window.finalConceptNote = newContent;
                     addMessage('Concept note updated!', true);
                 });
-                
+
                 window.finalConceptNote = data.concept_note;
-                
+
                 const actionsHtml = `
                     <div style="display: flex; gap: 10px; margin-top: 15px;">
                         <button class="btn btn-success" onclick="downloadPDF()">⬇ Download PDF</button>
@@ -1178,7 +1207,7 @@
                     </div>
                 `;
                 addMessage(actionsHtml, true, true);
-                
+
                 conversationState = 'completed';
             } catch (error) {
                 console.error('Error:', error);
@@ -1196,44 +1225,79 @@
             }
 
             showLoading(true);
-            
+
             try {
                 const response = await fetch('/api/download-pdf/', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         session_id: sessionId,
                         concept_note: window.finalConceptNote
                     })
                 });
 
-                if (response.ok) {
-                    // Create blob from response
-                    const blob = await response.blob();
-                    
-                    // Create download link
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `concept_note_${sessionId}.pdf`;
-                    document.body.appendChild(a);
-                    a.click();
-                    
-                    // Cleanup
-                    window.URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
-                    
-                    addMessage('✓ PDF downloaded successfully!', true);
-                } else {
-                    throw new Error('PDF generation failed');
+                // Check response status first
+                if (!response.ok) {
+                    const contentType = response.headers.get('content-type') || '';
+                    let errorMessage = 'PDF generation failed';
+
+                    if (contentType.includes('application/json')) {
+                        try {
+                            const errorData = await response.json();
+                            errorMessage = errorData.error || errorMessage;
+                        } catch (e) {
+                            errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                        }
+                    } else {
+                        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    }
+
+                    throw new Error(errorMessage);
                 }
+
+                // Check if we got PDF data
+                const contentType = response.headers.get('content-type') || '';
+
+                if (!contentType.includes('application/pdf')) {
+                    // Might be error JSON even with 200 status
+                    try {
+                        const data = await response.json();
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+                        throw new Error('Unexpected response format from server');
+                    } catch (e) {
+                        throw new Error('Invalid response from server: ' + e.message);
+                    }
+                }
+
+                // Process the PDF blob
+                const blob = await response.blob();
+
+                if (blob.size === 0) {
+                    throw new Error('PDF file is empty');
+                }
+
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `concept_note_${sessionId}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+
+                addMessage('✅ PDF downloaded successfully!', true);
+
             } catch (error) {
                 console.error('Error downloading PDF:', error);
-                alert('Error downloading PDF: ' + error.message);
+                addMessage('❌ Error downloading PDF: ' + error.message, true);
             } finally {
                 showLoading(false);
             }
         }
+
     </script>
 </body>
+
 </html>

@@ -16,6 +16,7 @@ class ConceptProject(models.Model):
     conversation_history = models.JSONField(default=list)
     final_concept_note = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+    client_name = models.CharField(max_length=200, blank=True, null=True)
+
     def __str__(self):
         return f"Project {self.session_id}"
