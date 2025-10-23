@@ -632,14 +632,21 @@
         </div>
 
         <div class="input-area">
+            <!-- New Highlight Points box -->
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;">
+                <label for="highlightInput" style="font-size: 13px; color: #8b92b0;">Highlight Points (Optional)</label>
+                <textarea id="highlightInput" class="input-field" placeholder="Enter key points or focus areas..."
+                    rows="1"></textarea>
+            </div>
+
+            <!-- Existing Description area -->
             <div class="input-wrapper">
                 <textarea id="userInput" class="input-field" placeholder="Describe your project idea..."
                     rows="1"></textarea>
-                <button class="send-btn" id="sendBtn" onclick="sendMessage()">
-                    ➤
-                </button>
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
             </div>
         </div>
+
     </div>
 
     <!-- Right Sidebar -->
@@ -771,6 +778,32 @@
                             <button class="remove-btn" onclick="clearPDFUpload()">×</button>
                         </div>
                     `;
+                    
+                    // Extract key points and description from the uploaded text
+                    const extractedText = data.extracted_text || '';
+                    const lines = extractedText.split('\n');
+                    let keyPoints = [];
+                    let description = [];
+                    let isKeyPoint = false;
+
+                    // Try to identify bullet points or numbered lists as key points
+                    for (const line of lines) {
+                        if (line.trim().match(/^[•\-\*\d+\.]|\([a-zA-Z\d]+\)/)) {
+                            isKeyPoint = true;
+                            keyPoints.push(line.trim());
+                        } else if (line.trim()) {
+                            description.push(line.trim());
+                        }
+                    }
+
+                    // Update both fields
+                    const highlightInput = document.getElementById('highlightInput');
+                    const userInput = document.getElementById('userInput');
+                    
+                    if (keyPoints.length > 0) {
+                        highlightInput.value = keyPoints.join('\n');
+                    }
+                    userInput.value = description.join('\n');
 
                     // Auto-fill text input with extracted text
                     userInput.value = data.extracted_text;
@@ -815,6 +848,32 @@
                             <button class="remove-btn" onclick="clearAudioUpload()">×</button>
                         </div>
                     `;
+
+                    // Process transcribed text to separate key points and description
+                    const transcribedText = data.transcribed_text || '';
+                    const lines = transcribedText.split('\n');
+                    let keyPoints = [];
+                    let description = [];
+                    let isKeyPoint = false;
+
+                    // Try to identify bullet points or numbered lists as key points
+                    for (const line of lines) {
+                        if (line.trim().match(/^[•\-\*\d+\.]|\([a-zA-Z\d]+\)/)) {
+                            isKeyPoint = true;
+                            keyPoints.push(line.trim());
+                        } else if (line.trim()) {
+                            description.push(line.trim());
+                        }
+                    }
+
+                    // Update both fields
+                    const highlightInput = document.getElementById('highlightInput');
+                    const userInput = document.getElementById('userInput');
+                    
+                    if (keyPoints.length > 0) {
+                        highlightInput.value = keyPoints.join('\n');
+                    }
+                    userInput.value = description.join('\n');
 
                     // Auto-fill text input with transcribed text
                     userInput.value = data.transcribed_text;
@@ -976,10 +1035,18 @@
 
         async function sendMessage() {
             const message = userInput.value.trim();
+            const highlights = document.getElementById('highlightInput').value.trim();
             if (!message) return;
 
-            addMessage(message, false);
+            // Show both description and highlights in the message
+            let displayMessage = message;
+            if (highlights) {
+                displayMessage += "\n\nHighlight Points:\n" + highlights;
+            }
+            addMessage(displayMessage, false);
+            
             userInput.value = '';
+            document.getElementById('highlightInput').value = '';
             userInput.style.height = 'auto';
             disableInput(true);
             showTyping(true);
@@ -1000,40 +1067,64 @@
                 userInput.focus();
             }
         }
+async function handleInitialInput(input) {
+    // Get highlight points from closure since the field is already cleared
+    const highlightPoints = input.includes("Highlight Points:") ? 
+        input.split("Highlight Points:")[1].trim() : "";
+    
+    // Get the main description without highlights
+    const description = input.includes("Highlight Points:") ? 
+        input.split("Highlight Points:")[0].trim() : input;
 
-        async function handleInitialInput(input) {
-            const response = await fetch('/api/generate-preview/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ raw_input: input, highlight_points: '' })
-            });
+    try {
+        // Send both description and highlights to backend
+        const response = await fetch('/api/generate-preview/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                raw_input: description,
+                highlight_points: highlightPoints
+            })
+        });
 
-            const data = await response.json();
-            if (data.error || typeof data.preview === 'undefined') {
-                const errorMessage = data.error || 'An unknown error occurred.';
-                addMessage(`Sorry, something went wrong: ${errorMessage}`, true);
-                console.error('Backend Error:', data);
-                return; // Stop execution
-            }
-            sessionId = data.session_id;
-            currentPreview = data.preview;
+        const data = await response.json();
 
-            addMessage('Great! I\'ve created a detailed preview:', true);
-
-            addEditableContent(data.preview, async (newContent) => {
-                currentPreview = newContent;
-                addMessage('Preview updated!', true);
-            });
-
-            const actionsHtml = `
-                <div class="action-buttons">
-                    <button class="action-btn" onclick="acceptPreview()">✓ Looks Good, Continue</button>
-                </div>
-            `;
-            addMessage(actionsHtml, true, true);
-
-            conversationState = 'preview_shown';
+        if (data.error || typeof data.preview === 'undefined') {
+            const errorMessage = data.error || 'An unknown error occurred.';
+            addMessage(`Sorry, something went wrong: ${errorMessage}`, true);
+            console.error('Backend Error:', data);
+            return;
         }
+
+        // ✅ Store session ID for next API calls
+        sessionId = data.session_id;
+        currentPreview = data.preview;
+
+        console.log("🟢 Session ID:", sessionId);
+        console.log("🟢 Highlight Points sent:", highlightPoints);
+
+        // ✅ Show the generated preview
+        addMessage("Great! I've created a detailed preview:", true);
+        addEditableContent(data.preview, async (newContent) => {
+            currentPreview = newContent;
+            addMessage("Preview updated!", true);
+        });
+
+        // ✅ Add continue button
+        const actionsHtml = `
+            <div class="action-buttons">
+                <button class="action-btn" onclick="acceptPreview()">✓ Looks Good, Continue</button>
+            </div>
+        `;
+        addMessage(actionsHtml, true, true);
+
+        conversationState = 'preview_shown';
+    } catch (error) {
+        console.error("❌ Error in handleInitialInput:", error);
+        addMessage("Sorry, something went wrong while generating the preview.", true);
+    }
+}
+
 
         async function acceptPreview() {
             addMessage('Preview approved', false);
