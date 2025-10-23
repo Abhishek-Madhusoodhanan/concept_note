@@ -751,76 +751,45 @@
             }
         }
 
-        async function handlePDFUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+       async function handlePDFUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
 
-            const statusDiv = document.getElementById('pdfUploadStatus');
-            statusDiv.innerHTML = '<div class="uploaded-file">📄 Uploading...</div>';
+    const statusDiv = document.getElementById('pdfUploadStatus');
+    statusDiv.innerHTML = '<div class="uploaded-file">📄 Uploading...</div>';
 
-            showLoading(true);
+    showLoading(true);
 
-            try {
-                const formData = new FormData();
-                formData.append('file', file);
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
 
-                const response = await fetch('/api/upload-file/', {
-                    method: 'POST',
-                    body: formData
-                });
+        const response = await fetch('/api/upload-file/', {
+            method: 'POST',
+            body: formData
+        });
 
-                const data = await response.json();
+        const data = await response.json();
 
-                if (data.success) {
-                    statusDiv.innerHTML = `
-                        <div class="uploaded-file">
-                            📄 ${data.filename}
-                            <button class="remove-btn" onclick="clearPDFUpload()">×</button>
-                        </div>
-                    `;
-                    
-                    // Extract key points and description from the uploaded text
-                    const extractedText = data.extracted_text || '';
-                    const lines = extractedText.split('\n');
-                    let keyPoints = [];
-                    let description = [];
-                    let isKeyPoint = false;
-
-                    // Try to identify bullet points or numbered lists as key points
-                    for (const line of lines) {
-                        if (line.trim().match(/^[•\-\*\d+\.]|\([a-zA-Z\d]+\)/)) {
-                            isKeyPoint = true;
-                            keyPoints.push(line.trim());
-                        } else if (line.trim()) {
-                            description.push(line.trim());
-                        }
-                    }
-
-                    // Update both fields
-                    const highlightInput = document.getElementById('highlightInput');
-                    const userInput = document.getElementById('userInput');
-                    
-                    if (keyPoints.length > 0) {
-                        highlightInput.value = keyPoints.join('\n');
-                    }
-                    userInput.value = description.join('\n');
-
-                    // Auto-fill text input with extracted text
-                    userInput.value = data.extracted_text;
-                    userInput.style.height = 'auto';
-                    userInput.style.height = userInput.scrollHeight + 'px';
-
-                    addMessage('✓ PDF uploaded and text extracted!', true);
-                } else {
-                    statusDiv.innerHTML = `<div style="color: #ff4444; font-size: 12px;">Error: ${data.error}</div>`;
-                }
-            } catch (error) {
-                statusDiv.innerHTML = `<div style="color: #ff4444; font-size: 12px;">Upload failed: ${error.message}</div>`;
-            } finally {
-                showLoading(false);
-            }
+        if (data.success) {
+            statusDiv.innerHTML = `
+                <div class="uploaded-file">
+                    📄 ${data.filename}
+                    <button class="remove-btn" onclick="clearPDFUpload()">×</button>
+                </div>
+            `;
+            
+            // Just show success message - don't populate any fields
+            addMessage('✓ PDF uploaded and text extracted!', true);
+        } else {
+            statusDiv.innerHTML = `<div style="color: #ff4444; font-size: 12px;">Error: ${data.error}</div>`;
         }
-
+    } catch (error) {
+        statusDiv.innerHTML = `<div style="color: #ff4444; font-size: 12px;">Upload failed: ${error.message}</div>`;
+    } finally {
+        showLoading(false);
+    }
+}
         async function handleAudioUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -869,7 +838,7 @@
                     // Update both fields
                     const highlightInput = document.getElementById('highlightInput');
                     const userInput = document.getElementById('userInput');
-                    
+
                     if (keyPoints.length > 0) {
                         highlightInput.value = keyPoints.join('\n');
                     }
@@ -1044,7 +1013,7 @@
                 displayMessage += "\n\nHighlight Points:\n" + highlights;
             }
             addMessage(displayMessage, false);
-            
+
             userInput.value = '';
             document.getElementById('highlightInput').value = '';
             userInput.style.height = 'auto';
@@ -1067,63 +1036,63 @@
                 userInput.focus();
             }
         }
-async function handleInitialInput(input) {
-    // Get highlight points from closure since the field is already cleared
-    const highlightPoints = input.includes("Highlight Points:") ? 
-        input.split("Highlight Points:")[1].trim() : "";
-    
-    // Get the main description without highlights
-    const description = input.includes("Highlight Points:") ? 
-        input.split("Highlight Points:")[0].trim() : input;
+        async function handleInitialInput(input) {
+            // Get highlight points from closure since the field is already cleared
+            const highlightPoints = input.includes("Highlight Points:") ?
+                input.split("Highlight Points:")[1].trim() : "";
 
-    try {
-        // Send both description and highlights to backend
-        const response = await fetch('/api/generate-preview/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                raw_input: description,
-                highlight_points: highlightPoints
-            })
-        });
+            // Get the main description without highlights
+            const description = input.includes("Highlight Points:") ?
+                input.split("Highlight Points:")[0].trim() : input;
 
-        const data = await response.json();
+            try {
+                // Send both description and highlights to backend
+                const response = await fetch('/api/generate-preview/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        raw_input: description,
+                        highlight_points: highlightPoints
+                    })
+                });
 
-        if (data.error || typeof data.preview === 'undefined') {
-            const errorMessage = data.error || 'An unknown error occurred.';
-            addMessage(`Sorry, something went wrong: ${errorMessage}`, true);
-            console.error('Backend Error:', data);
-            return;
-        }
+                const data = await response.json();
 
-        // ✅ Store session ID for next API calls
-        sessionId = data.session_id;
-        currentPreview = data.preview;
+                if (data.error || typeof data.preview === 'undefined') {
+                    const errorMessage = data.error || 'An unknown error occurred.';
+                    addMessage(`Sorry, something went wrong: ${errorMessage}`, true);
+                    console.error('Backend Error:', data);
+                    return;
+                }
 
-        console.log("🟢 Session ID:", sessionId);
-        console.log("🟢 Highlight Points sent:", highlightPoints);
+                // ✅ Store session ID for next API calls
+                sessionId = data.session_id;
+                currentPreview = data.preview;
 
-        // ✅ Show the generated preview
-        addMessage("Great! I've created a detailed preview:", true);
-        addEditableContent(data.preview, async (newContent) => {
-            currentPreview = newContent;
-            addMessage("Preview updated!", true);
-        });
+                console.log("🟢 Session ID:", sessionId);
+                console.log("🟢 Highlight Points sent:", highlightPoints);
 
-        // ✅ Add continue button
-        const actionsHtml = `
+                // ✅ Show the generated preview
+                addMessage("Great! I've created a detailed preview:", true);
+                addEditableContent(data.preview, async (newContent) => {
+                    currentPreview = newContent;
+                    addMessage("Preview updated!", true);
+                });
+
+                // ✅ Add continue button
+                const actionsHtml = `
             <div class="action-buttons">
                 <button class="action-btn" onclick="acceptPreview()">✓ Looks Good, Continue</button>
             </div>
         `;
-        addMessage(actionsHtml, true, true);
+                addMessage(actionsHtml, true, true);
 
-        conversationState = 'preview_shown';
-    } catch (error) {
-        console.error("❌ Error in handleInitialInput:", error);
-        addMessage("Sorry, something went wrong while generating the preview.", true);
-    }
-}
+                conversationState = 'preview_shown';
+            } catch (error) {
+                console.error("❌ Error in handleInitialInput:", error);
+                addMessage("Sorry, something went wrong while generating the preview.", true);
+            }
+        }
 
 
         async function acceptPreview() {
