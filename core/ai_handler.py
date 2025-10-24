@@ -355,13 +355,17 @@ Be practical and specific."""
 
     response = model.generate_content(prompt)
     return response.text.strip()
+
+
+
+
 def generate_concept_note(description, highlight_points, document_content, client_vision, extracted_requirements, solution_design, external_features, implementation_plan, reference_context):
     """
-    Generate a concise, client-ready concept note (approximately 3 pages) with unique content per section.
+    Generate a concise, professional concept note (2-3 pages) with unique, non-repetitive content per section.
     """
 
     concept_prompt = f"""
-Generate a comprehensive yet concise concept note (approximately 3 pages / 1500-2000 words) with natural language flow.
+Generate a concise and professional concept note (STRICTLY 2-3 pages / 1200-1500 words) with strategic business language and only essential information.
 
 PROJECT INPUTS:
 Description: {description}
@@ -389,125 +393,195 @@ CRITICAL INSTRUCTIONS FOR PROJECT TITLE:
 1. Analyze the PROJECT INPUTS and DETAILED CONTENT to identify the ACTUAL project/client name
 2. Look for mentions of: company names, project names, client organizations, product names
 3. DO NOT use generic words like "description", "document", or field labels
-4. If a clear client name exists (like "Convo AI", "XYZ School", "ABC Hospital"), USE IT
-5. Create a professional title that reflects the REAL project essence
+4. If a clear client name exists (like "Precise Eye Hospital", "FRIENDS School", "ABC Corporation"), USE IT
+5. Create a professional, descriptive title that reflects the REAL project essence and value proposition
+6. Format: "[Technology/Solution Type] for [Client Name]" (e.g., "AI-Powered Patient Engagement Platform for Precise Eye Hospital")
 
-CRITICAL CONTENT RULES:
-- Each section must contain UNIQUE information - NO repetition across sections
-- Keep total length to approximately 3 pages (1500-2000 words)
-- Be concise but comprehensive
-- Avoid redundancy between sections
-- Each section should build upon previous ones, not repeat them
+CRITICAL CONTENT RULES - ABSOLUTE REQUIREMENTS:
+❌ NO REPETITION ALLOWED - Each section must contain completely UNIQUE information
+❌ NO overlapping content between sections - violating this is unacceptable
+❌ Each section serves ONE specific purpose - stay within that purpose
+✓ Be highly specific and contextual to the CLIENT'S actual needs
+✓ Use professional business language with strategic depth
+✓ Include quantifiable metrics where possible
+✓ Write with authority and technical precision
+✓ Keep paragraphs concise (3-5 sentences maximum)
 
 GENERATE CONCEPT NOTE WITH THIS STRUCTURE:
 
-[Create Compelling Project Title - Based on project essence, 5-10 words]
-
+[Create Compelling Project Title - Professional, Specific, Client-Focused]
 
 1. ABOUT US
 
-Gaude AI Solutions is a leading artificial intelligence innovation company transforming businesses across multiple industries since 2018. Founded by visionary technologists in Kerala, India, we’ve grown from a partnership firm into a global AI powerhouse with presence across India, UAE, Uzbekistan, and Kenya. Our expertise spans intelligent automation, data-driven decision systems, and AI-powered business transformation — empowering organizations to achieve measurable efficiency, scalability, and innovation excellence.
+Gaude AI Solutions is a leading artificial intelligence innovation company transforming businesses across multiple industries since 2018. Founded by visionary technologists in Kerala, India, we've grown from a partnership firm into a global AI powerhouse with presence across India, UAE, Uzbekistan, and Kenya. Our expertise spans intelligent automation, data-driven decision systems, and AI-powered business transformation — empowering organizations to achieve measurable efficiency, scalability, and innovation excellence.
 
 
 2. EXECUTIVE SUMMARY
 
-[Write 1-2 concise paragraphs (150-200 words) that capture:
-- The core business opportunity in ONE sentence
-- The proposed solution approach in ONE sentence  
-- Expected transformative impact in ONE sentence
-- Key differentiators/competitive advantages
-Keep it high-level and strategic. This is the ONLY place for overview - don't repeat this content later.]
+[Write 1 concise paragraph (100-120 words):
+- Opening: The transformative opportunity (ONE sentence)
+- The strategic problem (ONE sentence)
+- The proposed solution with key differentiator (ONE sentence)
+- Expected business impact (ONE sentence)
+- Closing: Partnership value (ONE sentence)
+
+Use strategic language. Keep it brief and high-level ONLY.]
 
 
 3. PROBLEM STATEMENT
 
-[Write 2-3 paragraphs (200-250 words) focusing ONLY on:
-- Current pain points and challenges (what's broken/inefficient now)
-- Market gap or opportunity (why this problem matters NOW)
-- Business impact of NOT solving this (urgency and consequences)
-DO NOT mention solutions here - only problems and their impact.]
+[Write 2 concise paragraphs (180-220 words):
+
+Paragraph 1 - Current State & Pain Points (3-4 sentences):
+- Client's current situation with context (industry, scale)
+- 2-3 specific challenges they face
+- Business impact of these challenges
+
+Paragraph 2 - Strategic Urgency (2-3 sentences):
+- Cost of inaction
+- Why this matters NOW
+
+❌ DO NOT mention ANY solutions here - only problems]
 
 
 4. PROPOSED SOLUTION
 
-[Write 2-3 paragraphs (250-300 words) describing the TECHNICAL solution:
-- System architecture overview (how components fit together)
-- Core technology stack and platforms to be used
-- Integration approach with existing systems
-- Data flow and user interaction model
-Focus on HOW the solution works technically. Use the SOLUTION DESIGN provided.
-DO NOT repeat executive summary or problem statement content.]
+[Write 2 paragraphs (200-240 words):
+
+Paragraph 1 - Solution Overview (3-4 sentences):
+- What it is and who proposed it
+- How it transforms operations
+- Key technologies and platform accessibility
+
+Paragraph 2 - Strategic Positioning (2-3 sentences):
+- Competitive advantage created
+- Unique differentiators
+
+Use future-focused language: "will transform," "will serve as"
+
+❌ DO NOT list features here]
 
 
-5. KEY FEATURES & CAPABILITIES
+5. KEY FEATURES AND FUNCTIONALITIES
 
-[Write 1-2 paragraphs (150-200 words) listing SPECIFIC features:
-- 5-7 concrete features/modules with one-line descriptions
-- Focus on user-facing capabilities and innovative elements
-- Mention any AI/automation/advanced features from EXTERNAL MARKET FEATURES
-Present as a flowing paragraph with feature names in context, not a bulleted list.
-DO NOT repeat solution architecture - focus on end-user features.]
+[Write in structured format (350-400 words):
+
+Introduction (1 sentence):
+"The solution offers comprehensive features designed to address [client's need]."
+
+Then list 6-8 ESSENTIAL features only:
+
+For [Primary Users]:
+• Feature Name: 2 sentences (what it does, why it matters)
+• Feature Name: 2 sentences
+
+For [Secondary Users]:
+• Feature Name: 2 sentences
+• Feature Name: 2 sentences
+
+For Administrators:
+• Feature Name: 2 sentences
+
+Advanced Features:
+• AI-Powered Feature: 2 sentences
+• Integration Feature: 2 sentences
+
+Draw from SOLUTION DESIGN and EXTERNAL FEATURES.
+❌ Only include CRITICAL features, no repetition of architecture]
 
 
-6. IMPLEMENTATION APPROACH
+6. IMPLEMENTATION APPROACH AND DEVELOPMENT PROCESS
 
-[Write 2 paragraphs (200-250 words) covering:
-Paragraph 1 - Timeline: Break into 3-4 phases with timeframes
-- Phase 1: Discovery & Design (X weeks)
-- Phase 2: Development & Integration (X weeks)  
-- Phase 3: Testing & Deployment (X weeks)
-- Phase 4: Training & Support (X weeks)
+[Write ONLY phased rollout - NO paragraphs (150-180 words):
 
-Paragraph 2 - Methodology: Agile approach, team structure, quality assurance
-Use timeline info from CLARIFICATIONS if available.]
+"The implementation will follow a strategic phased approach:"
+
+Phase I - [Name] (X weeks/months):
+• Scope: [What will be built]
+• Key Deliverables: [Specific outputs]
+
+Phase II - [Name] (X weeks/months):
+• Scope: [What will be built]
+• Key Deliverables: [Specific outputs]
+
+Phase III - [Name] (X weeks/months):
+• Scope: [What will be built]
+• Key Deliverables: [Specific outputs]
+
+Closing: "This ensures iterative feedback and seamless adoption."
+
+❌ NO methodology paragraphs - phases ONLY]
 
 
-7. EXPECTED OUTCOMES & BENEFITS
+7. EXPECTED OUTCOMES AND BENEFITS
 
-[Write 2-3 paragraphs (250-300 words):
-Paragraph 1 - Quantifiable Benefits: ROI metrics, efficiency gains, cost savings (use specific percentages/numbers where possible)
+[Write 2 paragraphs (200-240 words):
 
-Paragraph 2 - Stakeholder Benefits: For EACH stakeholder group from DETAILED CONTENT, write 1-2 sentences on their specific gains
+Paragraph 1 - Quantifiable Outcomes (3-4 sentences):
+- ROI and efficiency metrics with specific numbers
+- Revenue opportunities and cost savings
+- Scalability
 
-Paragraph 3 - Long-term Impact: Strategic advantages, scalability, future-readiness
-DO NOT repeat problem statement or executive summary content - focus on measurable outcomes.]
+Paragraph 2 - Stakeholder Benefits (4-5 sentences):
+For EACH key stakeholder group (2-3 groups max):
+"[Stakeholder] will experience [specific benefits]."
+
+Keep concise. Use impact language: "significantly improve," "drive results"
+
+❌ DO NOT repeat problem statement]
 
 
 8. CONCLUSION
 
-[Write 1 paragraph (100-150 words) with:
-- A forward-looking statement about project success
-- Call-to-action for next steps
-- Final confidence statement about partnership
-Keep it brief and powerful. DO NOT summarize previous sections.]
+[Write 1 paragraph (80-100 words):
+- Reaffirm transformative potential (1 sentence)
+- Partnership value (1 sentence)
+- Next steps and call to action (1-2 sentences)
+
+Keep brief and powerful. NO summarization.]
 
 
 FORMATTING REQUIREMENTS:
-- Use section numbers (1., 2., 3., etc.)
-- Section titles in CAPS
-- Write in flowing paragraphs, not bullet points
-- Professional business tone
-- NO brackets, NO placeholders in final output
-- Total length: 1500-2000 words (approximately 3 pages)
+✓ Use section numbers (1., 2., 3., etc.)
+✓ Section titles in BOLD CAPS
+✓ Professional business prose with strategic language
+✓ Bullet points with detailed descriptions (• for main, o for sub-points)
+✓ Include client-specific terminology
+✓ NO generic placeholders - use ACTUAL client context
+✓ NO brackets or [placeholder text] in final output
+✓ Total length: 1200-1500 words (STRICTLY 2-3 pages)
+✓ Keep paragraphs concise (2-4 sentences each)
+✓ Only include ESSENTIAL, RELEVANT information
+✓ Remove all fluff and unnecessary details
 
-UNIQUENESS CHECK:
-Before writing each section, ensure you're NOT repeating information from previous sections.
-- About Us = Company background only
-- Executive Summary = High-level overview only
-- Problem Statement = Problems and challenges only  
-- Proposed Solution = Technical architecture only
-- Key Features = User-facing capabilities only
-- Implementation = Timeline and methodology only
-- Expected Outcomes = Measurable benefits only
-- Conclusion = Forward-looking wrap-up only
+TONE & STYLE GUIDELINES:
+✓ Confident and authoritative
+✓ Strategic and market-aware
+✓ Specific and contextual (never generic)
+✓ Future-focused with "will" statements
+✓ Professional business language
+✓ Technical depth where appropriate
+✓ Value-driven throughout
 
-Generate the complete personalized concept note now:
+ABSOLUTE UNIQUENESS REQUIREMENTS - EACH SECTION HAS ONE PURPOSE:
+1. About Us = Company credentials ONLY
+2. Executive Summary = High-level strategic overview ONLY (no details)
+3. Problem Statement = Problems, challenges, urgency ONLY (no solutions)
+4. Proposed Solution = Technical architecture and approach ONLY (no feature lists)
+5. Key Features = Detailed user-facing features ONLY (no architecture)
+6. Implementation = Phased rollout timeline ONLY (no methodology prose)
+7. Expected Outcomes = Measurable benefits and ROI ONLY (no problems or features)
+8. Conclusion = Forward momentum and next steps ONLY (no summarization)
+
+❌ CRITICAL: If you find yourself repeating information from a previous section, STOP and write something entirely different. Each section must be completely distinct.
+
+Generate the complete, concise, professional concept note now:
 """
-
-
 
     response = model.generate_content(concept_prompt)
     return response.text.strip()
+
+
 def generate_pdf(concept_note_text, client_name=None):
     import re
     from reportlab.lib import colors
