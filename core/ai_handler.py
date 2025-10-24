@@ -355,14 +355,13 @@ Be practical and specific."""
 
     response = model.generate_content(prompt)
     return response.text.strip()
-
 def generate_concept_note(description, highlight_points, document_content, client_vision, extracted_requirements, solution_design, external_features, implementation_plan, reference_context):
     """
-    Generate a detailed, client-ready concept note with structured natural flow.
+    Generate a concise, client-ready concept note (approximately 3 pages) with unique content per section.
     """
 
     concept_prompt = f"""
-Generate a comprehensive, personalized concept note with natural language flow.
+Generate a comprehensive yet concise concept note (approximately 3 pages / 1500-2000 words) with natural language flow.
 
 PROJECT INPUTS:
 Description: {description}
@@ -393,83 +392,122 @@ CRITICAL INSTRUCTIONS FOR PROJECT TITLE:
 4. If a clear client name exists (like "Convo AI", "XYZ School", "ABC Hospital"), USE IT
 5. Create a professional title that reflects the REAL project essence
 
+CRITICAL CONTENT RULES:
+- Each section must contain UNIQUE information - NO repetition across sections
+- Keep total length to approximately 3 pages (1500-2000 words)
+- Be concise but comprehensive
+- Avoid redundancy between sections
+- Each section should build upon previous ones, not repeat them
+
 GENERATE CONCEPT NOTE WITH THIS STRUCTURE:
 
 [Create Compelling Project Title - Based on project essence, 5-10 words]
 
 
-1. EXECUTIVE SUMMARY
+1. ABOUT US
 
-[Write 2-3 comprehensive paragraphs that capture the unique value proposition of this specific project. Include: the key business opportunity, competitive advantages of the proposed solution, and clear expectations for transformative impact. Make it compelling and specific to THIS project.]
-
-
-2. PROBLEM STATEMENT
-
-[Write 3-4 detailed paragraphs that articulate the specific business problem this project addresses. Include: current limitations and challenges, why solving this problem is strategically important, connection to broader market opportunities, and the case for urgent action. Base everything on the actual project details provided.]
+Gaude AI Solutions is a leading artificial intelligence innovation company transforming businesses across multiple industries since 2018. Founded by visionary technologists in Kerala, India, we’ve grown from a partnership firm into a global AI powerhouse with presence across India, UAE, Uzbekistan, and Kenya. Our expertise spans intelligent automation, data-driven decision systems, and AI-powered business transformation — empowering organizations to achieve measurable efficiency, scalability, and innovation excellence.
 
 
-3. CLIENT REQUIREMENTS & PROPOSED SOLUTIONS
+2. EXECUTIVE SUMMARY
 
-Client Requirements:
-
-[Analyze the DETAILED CONTENT section and organize the client's requirements into clear, logical categories. Present them as flowing text that comprehensively covers all needs mentioned in the preview. Do NOT just copy-paste the preview - synthesize it into organized requirement categories.]
-
-Our Proposed Solution:
-
-[Based on the SOLUTION DESIGN provided, describe the comprehensive solution architecture. Explain how the recommended internal products/modules address the requirements. Make it flow naturally as a solution narrative, not just a list. Show integration and how components work together.]
-
-
-4. INNOVATIVE FEATURES & EXTERNAL ENHANCEMENTS
-
-[Using the EXTERNAL MARKET FEATURES provided, describe additional capabilities that can enhance the solution. Present them as value-adds that ensure future scalability and competitive advantage. Make it specific to this project's domain.]
+[Write 1-2 concise paragraphs (150-200 words) that capture:
+- The core business opportunity in ONE sentence
+- The proposed solution approach in ONE sentence  
+- Expected transformative impact in ONE sentence
+- Key differentiators/competitive advantages
+Keep it high-level and strategic. This is the ONLY place for overview - don't repeat this content later.]
 
 
-5. IMPLEMENTATION PLAN
+3. PROBLEM STATEMENT
 
-[Create a realistic implementation timeline based on the project scope. Suggest phases like:
-- Phase 1: Requirements finalization and design
-- Phase 2: Core development and integration
-- Phase 3: Testing, training, and deployment
-
-Mention timeline considerations from the CLARIFICATIONS if any were provided about deadlines or timelines.]
-
-
-6. EXPECTED BUSINESS IMPACT
-
-[Write a comprehensive opening paragraph covering the quantifiable ROI and business benefits expected from this project. Include: operational efficiency improvements, cost savings, competitive advantages, both short-term (6-12 months) and long-term (2-3 years) value creation, and relevant KPIs. Make it specific to this project.]
-
-Key Stakeholders and Their Benefits:
-
-[Look at the TARGET USERS & STAKEHOLDERS section from the DETAILED CONTENT. For EACH stakeholder group mentioned there, write a detailed benefit description. Format as:
-
-Stakeholder Group Name: Comprehensive description of benefits they'll experience, including how the solution addresses their pain points, improves workflows, enhances capabilities, and creates opportunities. Include both immediate and long-term benefits.
-
-Continue for ALL stakeholder groups from the preview.]
-
-[Write a closing paragraph about the comprehensive support strategy for smooth transition and adoption. Include mention of training and adoption frameworks tailored to each stakeholder group.]
+[Write 2-3 paragraphs (200-250 words) focusing ONLY on:
+- Current pain points and challenges (what's broken/inefficient now)
+- Market gap or opportunity (why this problem matters NOW)
+- Business impact of NOT solving this (urgency and consequences)
+DO NOT mention solutions here - only problems and their impact.]
 
 
-7. CONCLUSION
+4. PROPOSED SOLUTION
 
-[Write a powerful 3-4 paragraph conclusion that: summarizes the unique value proposition, reinforces competitive advantages, emphasizes strategic importance for the client's future, and presents a clear call-to-action with an inspiring vision statement. Make it compelling and specific to THIS project.]
+[Write 2-3 paragraphs (250-300 words) describing the TECHNICAL solution:
+- System architecture overview (how components fit together)
+- Core technology stack and platforms to be used
+- Integration approach with existing systems
+- Data flow and user interaction model
+Focus on HOW the solution works technically. Use the SOLUTION DESIGN provided.
+DO NOT repeat executive summary or problem statement content.]
 
 
-CRITICAL REQUIREMENTS:
-- Use the ACTUAL content from the sections provided - don't make up generic content
-- Every section must be specific to this project
-- NO instructional placeholders like "PARAGRAPH 1" or "[Insert content]"
-- NO brackets in the final output
-- Write in natural, flowing paragraphs
-- Professional business document tone throughout
-- Synthesize information, don't just copy-paste sections
-- Ensure logical flow between all sections
+5. KEY FEATURES & CAPABILITIES
+
+[Write 1-2 paragraphs (150-200 words) listing SPECIFIC features:
+- 5-7 concrete features/modules with one-line descriptions
+- Focus on user-facing capabilities and innovative elements
+- Mention any AI/automation/advanced features from EXTERNAL MARKET FEATURES
+Present as a flowing paragraph with feature names in context, not a bulleted list.
+DO NOT repeat solution architecture - focus on end-user features.]
+
+
+6. IMPLEMENTATION APPROACH
+
+[Write 2 paragraphs (200-250 words) covering:
+Paragraph 1 - Timeline: Break into 3-4 phases with timeframes
+- Phase 1: Discovery & Design (X weeks)
+- Phase 2: Development & Integration (X weeks)  
+- Phase 3: Testing & Deployment (X weeks)
+- Phase 4: Training & Support (X weeks)
+
+Paragraph 2 - Methodology: Agile approach, team structure, quality assurance
+Use timeline info from CLARIFICATIONS if available.]
+
+
+7. EXPECTED OUTCOMES & BENEFITS
+
+[Write 2-3 paragraphs (250-300 words):
+Paragraph 1 - Quantifiable Benefits: ROI metrics, efficiency gains, cost savings (use specific percentages/numbers where possible)
+
+Paragraph 2 - Stakeholder Benefits: For EACH stakeholder group from DETAILED CONTENT, write 1-2 sentences on their specific gains
+
+Paragraph 3 - Long-term Impact: Strategic advantages, scalability, future-readiness
+DO NOT repeat problem statement or executive summary content - focus on measurable outcomes.]
+
+
+8. CONCLUSION
+
+[Write 1 paragraph (100-150 words) with:
+- A forward-looking statement about project success
+- Call-to-action for next steps
+- Final confidence statement about partnership
+Keep it brief and powerful. DO NOT summarize previous sections.]
+
+
+FORMATTING REQUIREMENTS:
+- Use section numbers (1., 2., 3., etc.)
+- Section titles in CAPS
+- Write in flowing paragraphs, not bullet points
+- Professional business tone
+- NO brackets, NO placeholders in final output
+- Total length: 1500-2000 words (approximately 3 pages)
+
+UNIQUENESS CHECK:
+Before writing each section, ensure you're NOT repeating information from previous sections.
+- About Us = Company background only
+- Executive Summary = High-level overview only
+- Problem Statement = Problems and challenges only  
+- Proposed Solution = Technical architecture only
+- Key Features = User-facing capabilities only
+- Implementation = Timeline and methodology only
+- Expected Outcomes = Measurable benefits only
+- Conclusion = Forward-looking wrap-up only
 
 Generate the complete personalized concept note now:
 """
 
+
+
     response = model.generate_content(concept_prompt)
     return response.text.strip()
-
 def generate_pdf(concept_note_text, client_name=None):
     import re
     from reportlab.lib import colors
