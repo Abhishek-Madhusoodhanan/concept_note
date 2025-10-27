@@ -68,39 +68,412 @@ def upload_file(request):
             })
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
-
+        
 @csrf_exempt
-def generate_preview(request):
+def initiate_project(request):
+    """
+    Step 1: Create session and store initial input without generating preview
+    """
     if request.method == 'POST':
-        if not os.getenv("GOOGLE_API_KEY"):
-            return JsonResponse({'error': 'Server configuration error: Google API key is not set.'}, status=500)
         try:
             data = json.loads(request.body)
-            raw_input = data.get('raw_input')
+            raw_input = data.get('raw_input', '').strip()
             highlight_points = data.get('highlight_points', '')
+            pdf_text = data.get('pdf_text', '')
+            
+            if not raw_input:
+                return JsonResponse({'error': 'Description is required'}, status=400)
+            
+            # Create session
             session_id = str(uuid.uuid4())[:8]
-            try:
-                formatted_preview = ai_generate_preview(raw_input, highlight_points)
-                if formatted_preview.startswith("Error:"):
-                    return JsonResponse({'error': formatted_preview}, status=500)
-            except ResourceExhausted:
-                return JsonResponse({
-                    'error': 'Quota exceeded. The free tier has a limit of requests per minute. Please wait a moment and try again.'
-                }, status=429)
+            
+            # Generate intelligent pre-preview questions
+            from .ai_handler import generate_pre_preview_questions
+            questions = generate_pre_preview_questions(raw_input, pdf_text, highlight_points)
+            
+            # Create project with initial data
             project = ConceptProject.objects.create(
                 session_id=session_id,
                 raw_input=raw_input,
-                formatted_preview=formatted_preview
+                uploaded_pdf_text=pdf_text,
+                pre_preview_questions=questions
             )
+            
             return JsonResponse({
+                'success': True,
                 'session_id': session_id,
-                'preview': formatted_preview
+                'questions': questions,
+                'message': 'Please answer the clarification questions to improve the preview quality'
             })
-        except json.JSONDecodeError:
+            
+        except Exception as e:
+            import traceback
+            print(f"Error in initiate_project: {traceback.format_exc()}")
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'POST method required'}, status=405)
+
+
+@csrf_exempt
+def save_pre_preview_answers(request):
+    """
+    Step 2: Save pre-preview clarification answers
+    """
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            session_id = data.get('session_id')
+            answers = data.get('answers', [])
+            
+            if not session_id:
+                return JsonResponse({'error': 'session_id is required'}, status=400)
+            
+            project = ConceptProject.objects.get(session_id=session_id)
+            
+            # FIX: Ensure answers is a list and not None
+            if answers is None:
+                answers = []
+                
+            project.pre_preview_answers = answers
+            
+            # Extract client name from answers if provided
+            for answer in answers:
+                if isinstance(answer, dict) and answer.get('category') == 'client_identification' and answer.get('value'):
+                    project.client_name = answer['value']
+                    break
+            
+            project.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Answers saved successfully'
+            })
+            
+        except ConceptProject.DoesNotExist:
+            return JsonResponse({'error': 'Project not found'}, status=404)
+        except Exception as e:
+            import traceback
+            print(f"Error in save_pre_preview_answers: {traceback.format_exc()}")
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'POST method required'}, status=405)
+
+
+@csrf_exempt
+def upload_supporting_document(request):
+    """
+    Upload additional supporting documents during pre-preview clarification
+    """
+    if request.method == 'POST':
+        try:
+            session_id = request.POST.get('session_id')
+            uploaded_file = request.FILES.get('file')
+            
+            if not session_id or not uploaded_file:
+                return JsonResponse({'error': 'Missing session_id or file'}, status=400)
+            
+            # Extract text from PDF
+            file_text = extract_text_from_pdf(uploaded_file)
+            
+            # Append to existing PDF text
+            project = ConceptProject.objects.get(session_id=session_id)
+            existing_text = project.uploaded_pdf_text or ""
+            project.uploaded_pdf_text = f"{existing_text}\n\n--- Additional Document: {uploaded_file.name} ---\n{file_text}"
+            project.save()
+            
+            return JsonResponse({
+                'success': True,
+                'filename': uploaded_file.name,
+                'message': 'Supporting document uploaded successfully'
+            })
+            
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'POST method required'}, status=405)
+
+
+# Update existing generate_preview to use pre-preview data
+@csrf_exempt
+def generate_preview(request):
+    """
+    Generate preview - handles both old and new flow with pre-preview clarifications
+    """
+    if request.method == 'POST':
+        # Check for API key
+        if not os.getenv("GOOGLE_API_KEY"):
+            return JsonResponse({
+                'error': 'Server configuration error: Google API key is not set.'
+            }, status=500)
+        
+        try:
+            data = json.loads(request.body)
+            session_id = data.get('session_id')
+            
+            print(f"DEBUG: Received session_id: {session_id}")
+            print(f"DEBUG: Request data keys: {data.keys()}")
+            
+            if not session_id:
+                # OLD FLOW: Direct preview generation without pre-clarifications
+                raw_input = data.get('raw_input')
+                highlight_points = data.get('highlight_points', '')
+                
+                print(f"DEBUG: OLD FLOW - raw_input length: {len(raw_input) if raw_input else 0}")
+                
+                if not raw_input:
+                    return JsonResponse({
+                        'error': 'raw_input is required'
+                    }, status=400)
+                
+                session_id = str(uuid.uuid4())[:8]
+                
+                try:
+                    formatted_preview = ai_generate_preview(raw_input, highlight_points)
+                    if formatted_preview.startswith("Error:"):
+                        return JsonResponse({'error': formatted_preview}, status=500)
+                except ResourceExhausted:
+                    return JsonResponse({
+                        'error': 'Quota exceeded. Please wait a moment and try again.'
+                    }, status=429)
+                
+                project = ConceptProject.objects.create(
+                    session_id=session_id,
+                    raw_input=raw_input,
+                    formatted_preview=formatted_preview
+                )
+                
+                return JsonResponse({
+                    'session_id': session_id,
+                    'preview': formatted_preview
+                })
+            
+            else:
+                # NEW FLOW: Use pre-preview clarifications to enhance preview
+                print(f"DEBUG: NEW FLOW - Looking up session: {session_id}")
+                
+                try:
+                    project = ConceptProject.objects.get(session_id=session_id)
+                    print(f"DEBUG: Found project: {project.id}")
+                    print(f"DEBUG: Project raw_input: {project.raw_input[:100] if project.raw_input else 'None'}")
+                    print(f"DEBUG: Project pre_preview_answers: {project.pre_preview_answers}")
+                except ConceptProject.DoesNotExist:
+                    print(f"DEBUG: Project NOT FOUND for session {session_id}")
+                    return JsonResponse({
+                        'error': f'Project not found for session {session_id}'
+                    }, status=404)
+                
+                # Safely get raw_input with fallback
+                enhanced_input = ""
+                if project.raw_input:
+                    enhanced_input = str(project.raw_input)
+                else:
+                    print("WARNING: project.raw_input is None or empty")
+                    return JsonResponse({
+                        'error': 'No initial input found for this project. Please start over.'
+                    }, status=400)
+                
+                print(f"DEBUG: Base enhanced_input length: {len(enhanced_input)}")
+                
+                # Add pre-preview answers to context
+                if project.pre_preview_answers and isinstance(project.pre_preview_answers, list):
+                    enhanced_input += "\n\nCLARIFICATIONS PROVIDED:\n"
+                    for answer in project.pre_preview_answers:
+                        if isinstance(answer, dict) and answer.get('value'):
+                            question_text = answer.get('question', '')
+                            answer_value = answer.get('value', '')
+                            enhanced_input += f"- {question_text}: {answer_value}\n"
+                    print(f"DEBUG: Added {len(project.pre_preview_answers)} clarifications")
+                
+                # Add PDF context if available
+                if project.uploaded_pdf_text:
+                    pdf_snippet = str(project.uploaded_pdf_text)[:2000]
+                    enhanced_input += f"\n\nSUPPORTING DOCUMENTS:\n{pdf_snippet}"
+                    print(f"DEBUG: Added PDF context (first 2000 chars)")
+                
+                print(f"DEBUG: Final enhanced_input length: {len(enhanced_input)}")
+                
+                # Generate enhanced preview
+                try:
+                    formatted_preview = ai_generate_preview(enhanced_input, "")
+                    if formatted_preview and formatted_preview.startswith("Error:"):
+                        return JsonResponse({'error': formatted_preview}, status=500)
+                except ResourceExhausted:
+                    return JsonResponse({
+                        'error': 'Quota exceeded. Please wait a moment and try again.'
+                    }, status=429)
+                except Exception as ai_error:
+                    print(f"DEBUG: AI generation error: {ai_error}")
+                    import traceback
+                    print(traceback.format_exc())
+                    return JsonResponse({
+                        'error': f'AI generation failed: {str(ai_error)}'
+                    }, status=500)
+                
+                # Save the preview
+                project.formatted_preview = formatted_preview
+                project.save()
+                print(f"DEBUG: Saved preview, length: {len(formatted_preview) if formatted_preview else 0}")
+                
+                return JsonResponse({
+                    'session_id': session_id,
+                    'preview': formatted_preview
+                })
+            
+        except json.JSONDecodeError as je:
+            print(f"DEBUG: JSON decode error: {je}")
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
         except Exception as e:
-            print(f"An unexpected server error occurred: {e}")
-            return JsonResponse({'error': 'An unexpected server error occurred.'}, status=500)
+            import traceback
+            error_trace = traceback.format_exc()
+            print(f"DEBUG: Exception in generate_preview:")
+            print(error_trace)
+            return JsonResponse({
+                'error': f'An unexpected server error occurred: {str(e)}'
+            }, status=500)
+    
+    return JsonResponse({'error': 'POST method required'}, status=405)
+
+@csrf_exempt
+def generate_preview(request):
+    """
+    Generate preview - handles both old and new flow with pre-preview clarifications
+    """
+    if request.method == 'POST':
+        # Check for API key
+        if not os.getenv("GOOGLE_API_KEY"):
+            return JsonResponse({
+                'error': 'Server configuration error: Google API key is not set.'
+            }, status=500)
+        
+        try:
+            data = json.loads(request.body)
+            session_id = data.get('session_id')
+            
+            print(f"DEBUG: Received session_id: {session_id}")
+            print(f"DEBUG: Request data keys: {data.keys()}")
+            
+            if not session_id:
+                # OLD FLOW: Direct preview generation without pre-clarifications
+                raw_input = data.get('raw_input')
+                highlight_points = data.get('highlight_points', '')
+                
+                print(f"DEBUG: OLD FLOW - raw_input length: {len(raw_input) if raw_input else 0}")
+                
+                if not raw_input:
+                    return JsonResponse({
+                        'error': 'raw_input is required'
+                    }, status=400)
+                
+                session_id = str(uuid.uuid4())[:8]
+                
+                try:
+                    formatted_preview = ai_generate_preview(raw_input, highlight_points)
+                    if formatted_preview.startswith("Error:"):
+                        return JsonResponse({'error': formatted_preview}, status=500)
+                except ResourceExhausted:
+                    return JsonResponse({
+                        'error': 'Quota exceeded. Please wait a moment and try again.'
+                    }, status=429)
+                
+                project = ConceptProject.objects.create(
+                    session_id=session_id,
+                    raw_input=raw_input,
+                    formatted_preview=formatted_preview
+                )
+                
+                return JsonResponse({
+                    'session_id': session_id,
+                    'preview': formatted_preview
+                })
+            
+            else:
+                # NEW FLOW: Use pre-preview clarifications to enhance preview
+                print(f"DEBUG: NEW FLOW - Looking up session: {session_id}")
+                
+                try:
+                    project = ConceptProject.objects.get(session_id=session_id)
+                    print(f"DEBUG: Found project: {project.id}")
+                    print(f"DEBUG: Project raw_input: {project.raw_input[:100] if project.raw_input else 'None'}")
+                    print(f"DEBUG: Project pre_preview_answers: {project.pre_preview_answers}")
+                except ConceptProject.DoesNotExist:
+                    print(f"DEBUG: Project NOT FOUND for session {session_id}")
+                    return JsonResponse({
+                        'error': f'Project not found for session {session_id}'
+                    }, status=404)
+                
+                # Safely get raw_input with fallback
+                enhanced_input = ""
+                if project.raw_input:
+                    enhanced_input = str(project.raw_input)
+                else:
+                    print("WARNING: project.raw_input is None or empty")
+                    return JsonResponse({
+                        'error': 'No initial input found for this project. Please start over.'
+                    }, status=400)
+                
+                print(f"DEBUG: Base enhanced_input length: {len(enhanced_input)}")
+                
+                # FIX: Safely handle pre_preview_answers - it might be None
+                if project.pre_preview_answers and isinstance(project.pre_preview_answers, list):
+                    enhanced_input += "\n\nCLARIFICATIONS PROVIDED:\n"
+                    for answer in project.pre_preview_answers:
+                        # FIX: Add type checking to avoid 'NoneType' subscript error
+                        if isinstance(answer, dict) and answer.get('value'):
+                            question_text = answer.get('question', '')
+                            answer_value = answer.get('value', '')
+                            enhanced_input += f"- {question_text}: {answer_value}\n"
+                    print(f"DEBUG: Added {len(project.pre_preview_answers)} clarifications")
+                else:
+                    print(f"DEBUG: No pre_preview_answers or not a list: {project.pre_preview_answers}")
+                
+                # Add PDF context if available
+                if project.uploaded_pdf_text:
+                    pdf_snippet = str(project.uploaded_pdf_text)[:2000]
+                    enhanced_input += f"\n\nSUPPORTING DOCUMENTS:\n{pdf_snippet}"
+                    print(f"DEBUG: Added PDF context (first 2000 chars)")
+                
+                print(f"DEBUG: Final enhanced_input length: {len(enhanced_input)}")
+                
+                # Generate enhanced preview
+                try:
+                    formatted_preview = ai_generate_preview(enhanced_input, "")
+                    if formatted_preview and formatted_preview.startswith("Error:"):
+                        return JsonResponse({'error': formatted_preview}, status=500)
+                except ResourceExhausted:
+                    return JsonResponse({
+                        'error': 'Quota exceeded. Please wait a moment and try again.'
+                    }, status=429)
+                except Exception as ai_error:
+                    print(f"DEBUG: AI generation error: {ai_error}")
+                    import traceback
+                    print(traceback.format_exc())
+                    return JsonResponse({
+                        'error': f'AI generation failed: {str(ai_error)}'
+                    }, status=500)
+                
+                # Save the preview
+                project.formatted_preview = formatted_preview
+                project.save()
+                print(f"DEBUG: Saved preview, length: {len(formatted_preview) if formatted_preview else 0}")
+                
+                return JsonResponse({
+                    'session_id': session_id,
+                    'preview': formatted_preview
+                })
+            
+        except json.JSONDecodeError as je:
+            print(f"DEBUG: JSON decode error: {je}")
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            import traceback
+            error_trace = traceback.format_exc()
+            print(f"DEBUG: Exception in generate_preview:")
+            print(error_trace)
+            return JsonResponse({
+                'error': f'An unexpected server error occurred: {str(e)}'
+            }, status=500)
+    
+    return JsonResponse({'error': 'POST method required'}, status=405)
 
 @csrf_exempt
 def get_clarifications(request):

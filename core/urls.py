@@ -11,6 +11,9 @@ urlpatterns = [
     path('api/get-products/', views.get_products, name='get_products'),
     path('api/upload-file/', views.upload_file, name='upload_file'), 
     path('api/download-pdf/', views.download_pdf, name='download_pdf'),
-        path('api/get-ai-suggestion/', views.get_ai_suggestion, name='get_ai_suggestion'),
-
+    path('api/get-ai-suggestion/', views.get_ai_suggestion, name='get_ai_suggestion'),
+    path('api/initiate-project/', views.initiate_project, name='initiate_project'),
+    path('api/save-pre-preview-answers/', views.save_pre_preview_answers, name='save_pre_preview_answers'),
+    path('api/upload-supporting-document/', views.upload_supporting_document, name='upload_supporting_document'),
+    
 ]

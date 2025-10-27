@@ -63,6 +63,128 @@ def extract_text_from_pdf(pdf_file):
         return text
     except Exception as e:
         return f"Error reading PDF: {str(e)}"
+    
+
+def generate_pre_preview_questions(raw_input, pdf_text=None, highlight_points=None):
+    """
+    Generate intelligent clarification questions BEFORE creating the preview.
+    Questions are 100% based on the actual client input.
+    Returns a structured list of questions with detected values for confirmation.
+    """
+    
+    # Combine all available input
+    combined_input = f"""
+USER'S DESCRIPTION:
+{raw_input}
+
+HIGHLIGHT POINTS:
+{highlight_points if highlight_points else "None provided"}
+
+PDF CONTENT:
+{pdf_text[:3000] if pdf_text else "No PDF uploaded"}
+"""
+    
+    prompt = f"""You are a business analyst reviewing initial project information. Your task is to identify missing or unclear information and generate smart clarification questions.
+
+AVAILABLE INFORMATION:
+{combined_input}
+
+TASK: Analyze the input and generate 3-5 intelligent clarification questions. Each question should:
+1. Be specific to what's actually mentioned (or missing) in the input
+2. Help improve the quality of the concept note
+3. Include detected values if found (for confirmation)
+4. Be optional (client can skip if not relevant)
+
+QUESTION CATEGORIES (only ask if relevant):
+- Client/Organization Identification
+- Project Budget/Investment Range
+- Timeline/Deadline Expectations
+- Scale/User Volume
+- Existing Systems/Integration Needs
+- Supporting Documentation
+- Specific Technical Requirements
+- Key Stakeholders/Decision Makers
+
+RESPONSE FORMAT (JSON):
+[
+  {{
+    "id": 1,
+    "category": "client_identification",
+    "question": "Is '[Detected Name]' the official client/organization name?",
+    "detected_value": "[Extracted Name]",
+    "field_type": "confirmation",
+    "importance": "critical",
+    "skip_allowed": false
+  }},
+  {{
+    "id": 2,
+    "category": "supporting_docs",
+    "question": "Do you have any supporting documents (RFP, technical specs, wireframes) that would help us understand the requirements better?",
+    "detected_value": null,
+    "field_type": "yes_no_upload",
+    "importance": "medium",
+    "skip_allowed": true
+  }},
+  {{
+    "id": 3,
+    "category": "budget",
+    "question": "What is your estimated budget or investment range for this project?",
+    "detected_value": null,
+    "field_type": "text_input",
+    "importance": "high",
+    "skip_allowed": true
+  }}
+]
+
+CRITICAL RULES:
+- Only generate questions for information that's truly unclear or missing
+- If client name is clearly stated, ask for confirmation
+- Always ask about supporting documents unless multiple PDFs already uploaded
+- Don't ask generic questions - be specific to their project
+- Maximum 5 questions - prioritize the most important
+- Set skip_allowed=false only for absolutely critical information
+- field_type options: "confirmation", "text_input", "yes_no", "yes_no_upload", "textarea"
+- importance levels: "critical", "high", "medium", "low"
+
+Return ONLY the JSON array, no additional text.
+"""
+
+    try:
+        response = model.generate_content(prompt)
+        questions_text = response.text.strip()
+        
+        # Clean up markdown code blocks if present
+        if questions_text.startswith('```'):
+            questions_text = questions_text.split('```')[1]
+            if questions_text.startswith('json'):
+                questions_text = questions_text[4:]
+        
+        questions = json.loads(questions_text)
+        return questions
+    
+    except Exception as e:
+        print(f"Error generating pre-preview questions: {e}")
+        # Fallback to basic questions
+        return [
+            {
+                "id": 1,
+                "category": "client_identification",
+                "question": "Please confirm or provide the client/organization name for this project",
+                "detected_value": None,
+                "field_type": "text_input",
+                "importance": "critical",
+                "skip_allowed": False
+            },
+            {
+                "id": 2,
+                "category": "supporting_docs",
+                "question": "Do you have any supporting documents (RFP, specifications, wireframes) to share?",
+                "detected_value": None,
+                "field_type": "yes_no_upload",
+                "importance": "medium",
+                "skip_allowed": True
+            }
+        ]
 
 def generate_preview(raw_input, highlight_points):
     """

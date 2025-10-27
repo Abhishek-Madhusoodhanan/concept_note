@@ -28,25 +28,38 @@ class InternalProduct(models.Model):
 
 
 class ConceptProject(models.Model):
-    session_id = models.CharField(max_length=100, unique=True, db_index=True)
-    raw_input = models.TextField()
-    formatted_preview = models.TextField(blank=True)
-    conversation_history = models.JSONField(default=list)
-    final_concept_note = models.TextField(blank=True)
-    client_name = models.CharField(max_length=200, blank=True, null=True)
-    
-    # NEW: Store recommendations to avoid regeneration
+    session_id = models.CharField(max_length=50, unique=True)
+    raw_input = models.TextField(blank=True, null=True)
+    uploaded_pdf_text = models.TextField(blank=True, null=True)
+    formatted_preview = models.TextField(blank=True, null=True)
+    conversation_history = models.JSONField(default=list, blank=True)
     internal_recommendations = models.TextField(blank=True, null=True)
     external_recommendations = models.TextField(blank=True, null=True)
+    final_concept_note = models.TextField(blank=True, null=True)
+    client_name = models.CharField(max_length=200, blank=True, null=True)
+    
+    # FIX: Ensure proper default values
+    pre_preview_questions = models.JSONField(default=list, blank=True)
+    pre_preview_answers = models.JSONField(default=list, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    class Meta:
-        ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['session_id']),
-        ]
-
     def __str__(self):
         return f"Project {self.session_id} - {self.client_name or 'Unnamed'}"
+
+    class Meta:
+        ordering = ['-created_at']
+
+class InternalProduct(models.Model):
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True, null=True)
+    pdf_file = models.FileField(upload_to='products/', blank=True, null=True)
+    extracted_text = models.TextField(blank=True, null=True)  # Cache extracted text
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['name']
