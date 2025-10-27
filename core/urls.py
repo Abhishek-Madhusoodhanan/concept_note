@@ -11,4 +11,6 @@ urlpatterns = [
     path('api/get-products/', views.get_products, name='get_products'),
     path('api/upload-file/', views.upload_file, name='upload_file'), 
     path('api/download-pdf/', views.download_pdf, name='download_pdf'),
+        path('api/get-ai-suggestion/', views.get_ai_suggestion, name='get_ai_suggestion'),
+
 ]

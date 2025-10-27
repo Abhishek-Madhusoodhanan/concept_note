@@ -132,32 +132,69 @@ def get_recommendations(request):
     if request.method == 'POST':
         data = json.loads(request.body)
         session_id = data.get('session_id')
+        
         try:
             project = ConceptProject.objects.get(session_id=session_id)
+            
+            # Check if recommendations already exist (caching)
+            if project.internal_recommendations and project.external_recommendations:
+                return JsonResponse({
+                    'internal': project.internal_recommendations,
+                    'external': project.external_recommendations,
+                    'cached': True
+                })
+            
+            # Generate new recommendations
             internal_products = InternalProduct.objects.all()
+            
             all_clarifications = "\n".join([
                 f"Q: {item['question']}\nA: {item['answer']}"
                 for item in project.conversation_history
             ])
-            internal = find_internal_matches(
-                project.formatted_preview,
-                all_clarifications,
-                internal_products
-            )
-            external = search_external_solutions(
-                project.formatted_preview,
-                all_clarifications
-            )
+            
+            # Add error handling for each recommendation type
+            try:
+                internal = find_internal_matches(
+                    project.formatted_preview,
+                    all_clarifications,
+                    internal_products
+                )
+            except Exception as e:
+                print(f"Internal recommendations error: {e}")
+                internal = "Unable to generate internal recommendations at this time. Please try again."
+            
+            try:
+                external = search_external_solutions(
+                    project.formatted_preview,
+                    all_clarifications
+                )
+            except Exception as e:
+                print(f"External recommendations error: {e}")
+                external = "Unable to generate external recommendations at this time. Please try again."
+            
+            # Cache the recommendations
+            project.internal_recommendations = internal
+            project.external_recommendations = external
+            project.save()
+            
             return JsonResponse({
                 'internal': str(internal) if internal else "No internal recommendations available.",
-                'external': str(external) if external else "No external recommendations available."
+                'external': str(external) if external else "No external recommendations available.",
+                'cached': False
             })
+            
+        except ConceptProject.DoesNotExist:
+            return JsonResponse({
+                'error': f'Project not found for session {session_id}'
+            }, status=404)
         except Exception as e:
+            import traceback
+            print(f"Error in get_recommendations: {traceback.format_exc()}")
             return JsonResponse({
                 'internal': 'Error generating internal recommendations',
                 'external': 'Error generating external recommendations',
                 'error': str(e)
-            })
+            }, status=500)
 
 @csrf_exempt
 def generate_final_note(request):
@@ -300,3 +337,132 @@ def download_pdf(request):
             'error': 'An unexpected error occurred while generating the PDF',
             'details': str(e)
         }, status=500)
+@csrf_exempt
+def get_ai_suggestion(request):
+    """
+    API endpoint to get AI suggestions for selected text
+    """
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            session_id = data.get('session_id')
+            selected_text = data.get('selected_text', '').strip()
+            suggestion_type = data.get('suggestion_type', 'improve')
+            multiple = data.get('multiple', False)  # Get multiple options
+            
+            if not session_id or not selected_text:
+                return JsonResponse({
+                    'error': 'Missing session_id or selected_text'
+                }, status=400)
+            
+            # Get the project to access full context
+            try:
+                project = ConceptProject.objects.get(session_id=session_id)
+                full_context = project.formatted_preview or project.final_concept_note or ""
+            except ConceptProject.DoesNotExist:
+                return JsonResponse({
+                    'error': 'Project not found'
+                }, status=404)
+            
+            # Validate text length
+            if len(selected_text) < 10:
+                return JsonResponse({
+                    'error': 'Selected text too short. Please select at least 10 characters.'
+                }, status=400)
+            
+            if len(selected_text) > 1000:
+                return JsonResponse({
+                    'error': 'Selected text too long. Please select less than 1000 characters.'
+                }, status=400)
+            
+            # Import the function
+            from .ai_handler import generate_ai_suggestion, generate_multiple_suggestions
+            
+            # Generate suggestion(s)
+            if multiple:
+                suggestions = generate_multiple_suggestions(
+                    selected_text, 
+                    full_context,
+                    count=3
+                )
+                return JsonResponse({
+                    'success': True,
+                    'suggestions': suggestions,
+                    'original': selected_text
+                })
+            else:
+                result = generate_ai_suggestion(
+                    selected_text,
+                    full_context,
+                    suggestion_type
+                )
+                return JsonResponse(result)
+            
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'error': 'Invalid JSON in request body'
+            }, status=400)
+        except Exception as e:
+            import traceback
+            print(f"Error in get_ai_suggestion: {traceback.format_exc()}")
+            return JsonResponse({
+                'error': f'Unexpected error: {str(e)}'
+            }, status=500)
+    
+    return JsonResponse({
+        'error': 'POST method required'
+    }, status=405)
+@csrf_exempt
+def get_ai_suggestion(request):
+    if request.method == 'POST':
+        try:
+            from .ai_handler import model
+            data = json.loads(request.body)
+            selected_text = data.get('selected_text', '').strip()
+            suggestion_type = data.get('suggestion_type', 'improve')
+            multiple = data.get('multiple', False)
+
+            if not selected_text:
+                return JsonResponse({'success': False, 'error': 'No text provided'}, status=400)
+
+            # Build an intelligent prompt for Gemini
+            if multiple:
+                prompt = f"""
+Generate 3 improved variations of the following sentence or paragraph:
+"{selected_text}"
+
+Each version should maintain the same meaning but vary in tone or phrasing.
+Return only the 3 rewritten options, numbered clearly.
+"""
+            else:
+                prompt = f"""
+Rewrite or {suggestion_type} the following text:
+"{selected_text}"
+
+Make it concise, natural, and contextually improved, keeping the same intent.
+Return only the rewritten version, no explanations.
+"""
+
+            response = model.generate_content(prompt)
+            text = response.text.strip()
+
+            # Format for multiple suggestions
+            if multiple:
+                suggestions = []
+                for i, line in enumerate(text.split('\n')):
+                    if line.strip():
+                        suggestions.append({
+                            'id': i + 1,
+                            'type': suggestion_type,
+                            'text': line.strip().lstrip('123.- ')
+                        })
+                return JsonResponse({'success': True, 'suggestions': suggestions})
+            else:
+                return JsonResponse({'success': True, 'suggestion': text})
+
+        except Exception as e:
+            import traceback
+            print("Error in get_ai_suggestion:", traceback.format_exc())
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    else:
+        return JsonResponse({'success': False, 'error': 'POST method required'}, status=405)
