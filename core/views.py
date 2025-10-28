@@ -211,19 +211,14 @@ def generate_preview(request):
             session_id = data.get('session_id')
             
             print(f"DEBUG: Received session_id: {session_id}")
-            print(f"DEBUG: Request data keys: {data.keys()}")
             
             if not session_id:
                 # OLD FLOW: Direct preview generation without pre-clarifications
                 raw_input = data.get('raw_input')
                 highlight_points = data.get('highlight_points', '')
                 
-                print(f"DEBUG: OLD FLOW - raw_input length: {len(raw_input) if raw_input else 0}")
-                
                 if not raw_input:
-                    return JsonResponse({
-                        'error': 'raw_input is required'
-                    }, status=400)
+                    return JsonResponse({'error': 'raw_input is required'}, status=400)
                 
                 session_id = str(uuid.uuid4())[:8]
                 
@@ -254,49 +249,58 @@ def generate_preview(request):
                 try:
                     project = ConceptProject.objects.get(session_id=session_id)
                     print(f"DEBUG: Found project: {project.id}")
-                    print(f"DEBUG: Project raw_input: {project.raw_input[:100] if project.raw_input else 'None'}")
-                    print(f"DEBUG: Project pre_preview_answers: {project.pre_preview_answers}")
                 except ConceptProject.DoesNotExist:
                     print(f"DEBUG: Project NOT FOUND for session {session_id}")
                     return JsonResponse({
                         'error': f'Project not found for session {session_id}'
                     }, status=404)
                 
-                # Safely get raw_input with fallback
-                enhanced_input = ""
-                if project.raw_input:
-                    enhanced_input = str(project.raw_input)
-                else:
+                # Get the original raw input
+                if not project.raw_input or not project.raw_input.strip():
                     print("WARNING: project.raw_input is None or empty")
                     return JsonResponse({
                         'error': 'No initial input found for this project. Please start over.'
                     }, status=400)
                 
-                print(f"DEBUG: Base enhanced_input length: {len(enhanced_input)}")
+                original_input = str(project.raw_input).strip()
+                print(f"DEBUG: Original input length: {len(original_input)}")
                 
-                # Add pre-preview answers to context
+                # CRITICAL FIX: Build highlight_points string with clarifications
+                highlight_points_enhanced = ""
+                
+                # Add pre-preview answers as context (not as main input)
                 if project.pre_preview_answers and isinstance(project.pre_preview_answers, list):
-                    enhanced_input += "\n\nCLARIFICATIONS PROVIDED:\n"
+                    highlight_points_enhanced = "ADDITIONAL CLARIFICATIONS:\n"
                     for answer in project.pre_preview_answers:
                         if isinstance(answer, dict) and answer.get('value'):
                             question_text = answer.get('question', '')
                             answer_value = answer.get('value', '')
-                            enhanced_input += f"- {question_text}: {answer_value}\n"
-                    print(f"DEBUG: Added {len(project.pre_preview_answers)} clarifications")
+                            highlight_points_enhanced += f"{question_text}: {answer_value}\n"
+                    print(f"DEBUG: Added {len(project.pre_preview_answers)} clarifications to highlights")
                 
-                # Add PDF context if available
+                # Add PDF context to highlights if available
                 if project.uploaded_pdf_text:
                     pdf_snippet = str(project.uploaded_pdf_text)[:2000]
-                    enhanced_input += f"\n\nSUPPORTING DOCUMENTS:\n{pdf_snippet}"
-                    print(f"DEBUG: Added PDF context (first 2000 chars)")
+                    highlight_points_enhanced += f"\n\nSUPPORTING DOCUMENTS:\n{pdf_snippet}"
+                    print(f"DEBUG: Added PDF context")
                 
-                print(f"DEBUG: Final enhanced_input length: {len(enhanced_input)}")
+                print(f"DEBUG: Calling ai_generate_preview with original input and enhanced highlights")
+                print(f"DEBUG: Original input preview: {original_input[:200]}")
+                print(f"DEBUG: Highlights preview: {highlight_points_enhanced[:200]}")
                 
-                # Generate enhanced preview
+                # CRITICAL: Call ai_generate_preview with original input and clarifications as highlights
                 try:
-                    formatted_preview = ai_generate_preview(enhanced_input, "")
+                    formatted_preview = ai_generate_preview(
+                        raw_input=original_input,  # Original description only
+                        highlight_points=highlight_points_enhanced  # Clarifications as context
+                    )
+                    
                     if formatted_preview and formatted_preview.startswith("Error:"):
                         return JsonResponse({'error': formatted_preview}, status=500)
+                    
+                    print(f"DEBUG: Generated preview length: {len(formatted_preview)}")
+                    print(f"DEBUG: Preview starts with: {formatted_preview[:200]}")
+                    
                 except ResourceExhausted:
                     return JsonResponse({
                         'error': 'Quota exceeded. Please wait a moment and try again.'
@@ -309,10 +313,10 @@ def generate_preview(request):
                         'error': f'AI generation failed: {str(ai_error)}'
                     }, status=500)
                 
-                # Save the preview
+                # Save the generated preview
                 project.formatted_preview = formatted_preview
                 project.save()
-                print(f"DEBUG: Saved preview, length: {len(formatted_preview) if formatted_preview else 0}")
+                print(f"DEBUG: Saved preview to database")
                 
                 return JsonResponse({
                     'session_id': session_id,

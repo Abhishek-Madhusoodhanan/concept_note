@@ -526,7 +526,7 @@
     </div>
   </div>
 
-  <script>
+ <script>
     // ---------------------------
     // State variables
     // ---------------------------
@@ -563,7 +563,7 @@
       userInput.focus();
       await loadProducts();
       initAISuggestionFeature();
-      initSuggestionDrag(); // make popup draggable
+      initSuggestionDrag();
       console.log('✅ Initialization complete');
     };
 
@@ -708,14 +708,14 @@
     function closeClarificationModal() {
       if (confirm('Are you sure? Your answers will be lost and a basic preview will be generated.')) {
         document.getElementById('clarificationModal').classList.remove('active');
-        generatePreviewWithoutClarifications();
+        generateEnhancedPreview();
       }
     }
     
     function skipAllClarifications() {
       if (confirm('Skip all clarifications? We recommend answering at least the critical questions for best results.')) {
         document.getElementById('clarificationModal').classList.remove('active');
-        generatePreviewWithoutClarifications();
+        generateEnhancedPreview();
       }
     }
     
@@ -799,6 +799,7 @@
       } catch (err) {
         alert('Error saving clarifications: ' + err.message);
         console.error(err);
+        const submitBtn = document.getElementById('submitClarificationsBtn');
         submitBtn.disabled = false;
         submitBtn.innerHTML = '✓ Submit & Generate Preview';
       }
@@ -835,7 +836,9 @@
           const actionsHtml = `<div class="action-buttons"><button class="action-btn" onclick="acceptPreview()">✓ Looks Good, Continue</button></div>`;
           addMessage(actionsHtml, true, true);
           
+          // Set state to preview_shown (NOT clarifications)
           conversationState = 'preview_shown';
+          updateProgressStep(2);
         } else {
           throw new Error(data.error || 'Failed to generate preview');
         }
@@ -848,11 +851,6 @@
         disableInput(false);
         userInput.focus();
       }
-    }
-    
-    async function generatePreviewWithoutClarifications() {
-      addMessage('Generating basic preview without additional clarifications...', true);
-      await generateEnhancedPreview();
     }
 
     // ---------------------------
@@ -887,7 +885,6 @@
     }
 
     function handleTextSelection(e) {
-      // If selection comes from keyboard, e may be undefined-ish; guard.
       try { e?.preventDefault(); } catch (err) {}
       const selection = window.getSelection();
       selectedText = selection.toString().trim();
@@ -909,7 +906,6 @@
     function showContextMenu(e) {
       if (!sessionId) return;
       contextMenu.classList.add('active');
-      // use client coordinates for better placement
       const x = Math.min((e?.clientX || 100), window.innerWidth - 250);
       const y = (e?.clientY || 100) - 50;
       contextMenu.style.left = `${x}px`;
@@ -920,9 +916,6 @@
       contextMenu.classList.remove('active');
     }
 
-    // ---------------------------
-    // Show suggestion & call backend
-    // ---------------------------
     async function showAISuggestion(type) {
       if (!selectedText || !sessionId) {
         alert('Please generate a preview first!');
@@ -931,7 +924,6 @@
       }
       hideContextMenu();
 
-      // position under selection if available
       let left = 100;
       let top = 100;
       if (selectedRange) {
@@ -1012,11 +1004,9 @@
       currentSuggestion = element.getAttribute('data-suggestion') || '';
     }
 
-    // Fix: accept event so we can mark active button
     function changeSuggestionType(type, evt) {
       document.querySelectorAll('.suggestion-type-btn').forEach(btn => btn.classList.remove('active'));
       if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
-      // fallback: find the button for type
       const btn = document.querySelector(`.suggestion-type-btn[data-type="${type}"]`);
       if (btn) btn.classList.add('active');
       getSingleSuggestion(type);
@@ -1024,7 +1014,6 @@
 
     function acceptSuggestion() {
       if (!selectedRange || !currentSuggestion) return;
-      // insert text node in place of selection
       selectedRange.deleteContents();
       selectedRange.insertNode(document.createTextNode(currentSuggestion));
 
@@ -1051,7 +1040,7 @@
     }
 
     // ---------------------------
-    // Product loading (robust)
+    // Product loading
     // ---------------------------
     async function loadProducts(){
       console.log('🔍 Loading products...');
@@ -1083,29 +1072,7 @@
         console.log('✅ Products loaded:', allProducts.length);
       } catch (err) {
         console.error('❌ Error loading products:', err);
-        // show helpful feedback and fallback to a mock list so the UI is testable
         productsList.innerHTML = '<div class="loading-products" style="color:#ff4444">Error loading products. Check console.</div>';
-
-        // Optional dev fallback (only used if fetch fails) — remove/comment if you don't want this behavior:
-        const fallback = [
-          { id: 101, name: 'Neobench: AI-Powered LMS' },
-          { id: 102, name: 'Convo AI: Advanced Voice Intelligence' },
-          { id: 103, name: 'Asset Trace: Asset Management' }
-        ];
-        console.warn('Using fallback mock products for UI testing.');
-        allProducts = fallback;
-        // Render fallback after a short delay so user sees the error first
-        setTimeout(() => {
-          const productsList2 = document.getElementById('productsList');
-          productsList2.innerHTML = '';
-          allProducts.forEach(product => {
-            const div = document.createElement('div');
-            div.className = 'product-item';
-            div.id = `product-${product.id}`;
-            div.innerHTML = `<input type="checkbox" id="check-${product.id}" onchange="toggleProduct(${product.id})"><label for="check-${product.id}">${escapeHtml(product.name)}</label>`;
-            productsList2.appendChild(div);
-          });
-        }, 600);
       }
     }
 
@@ -1124,7 +1091,7 @@
     }
 
     // ---------------------------
-    // File uploads, preview, and other existing logic (kept intact)
+    // File uploads
     // ---------------------------
     async function handlePDFUpload(event) {
       const file = event.target.files[0];
@@ -1138,7 +1105,6 @@
         const resp = await fetch('/api/upload-file/', { method:'POST', body: formData });
         const data = await resp.json();
         if (data.success) {
-          // Store extracted text for later use
           statusDiv.dataset.extractedText = data.extracted_text;
           statusDiv.innerHTML = `<div class="uploaded-file">📄 ${escapeHtml(data.filename)}<button class="remove-btn" onclick="clearPDFUpload()">×</button></div>`;
           addMessage('✓ PDF uploaded and text extracted!', true);
@@ -1193,11 +1159,26 @@
       statusDiv.innerHTML=''; 
     }
     
-    function clearAudioUpload(){ document.getElementById('audioInput').value=''; document.getElementById('audioUploadStatus').innerHTML=''; }
-    function showLoading(show){ loadingOverlay.classList.toggle('active', !!show); }
+    function clearAudioUpload(){ 
+      document.getElementById('audioInput').value=''; 
+      document.getElementById('audioUploadStatus').innerHTML=''; 
+    }
+    
+    function showLoading(show){ 
+      loadingOverlay.classList.toggle('active', !!show); 
+    }
 
-    userInput.addEventListener('input', function(){ this.style.height='auto'; this.style.height = (this.scrollHeight) + 'px'; });
-    userInput.addEventListener('keydown', function(e){ if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); } });
+    userInput.addEventListener('input', function(){ 
+      this.style.height='auto'; 
+      this.style.height = (this.scrollHeight) + 'px'; 
+    });
+    
+    userInput.addEventListener('keydown', function(e){ 
+      if (e.key === 'Enter' && !e.shiftKey){ 
+        e.preventDefault(); 
+        sendMessage(); 
+      } 
+    });
 
     function updateProgressStep(step){
       document.querySelectorAll('.progress-item').forEach(item => item.classList.remove('active'));
@@ -1213,7 +1194,9 @@
     }
 
     function escapeHtml(text){
-      const div = document.createElement('div'); div.textContent = text; return div.innerHTML;
+      const div = document.createElement('div'); 
+      div.textContent = text; 
+      return div.innerHTML;
     }
 
     function addEditableContent(content, onSave){
@@ -1239,22 +1222,30 @@
     }
 
     function startEdit(id){
-      const box = document.getElementById(id); if(!box) return;
+      const box = document.getElementById(id); 
+      if(!box) return;
       box.querySelector('.content-display').style.display = 'none';
       box.querySelector('.content-editor').style.display = 'block';
       box.querySelector('.edit-btn-icon').style.display = 'none';
       box.querySelector('.edit-textarea').focus();
     }
+    
     function cancelEdit(id){
-      const box = document.getElementById(id); if(!box) return;
+      const box = document.getElementById(id); 
+      if(!box) return;
       box.querySelector('.content-display').style.display = 'block';
       box.querySelector('.content-editor').style.display = 'none';
       box.querySelector('.edit-btn-icon').style.display = 'block';
     }
+    
     async function saveEdit(id){
-      const box = document.getElementById(id); if(!box) return;
+      const box = document.getElementById(id); 
+      if(!box) return;
       const newContent = box.querySelector('.edit-textarea').value.trim();
-      if (!newContent) { alert('Content cannot be empty!'); return; }
+      if (!newContent) { 
+        alert('Content cannot be empty!'); 
+        return; 
+      }
       box.querySelector('.content-display').innerHTML = formatContent(newContent);
       cancelEdit(id);
       const callback = window['onSave_' + id];
@@ -1266,103 +1257,113 @@
       }
     }
 
-    function showTyping(show){ typingIndicator.classList.toggle('active', !!show); if (show) scrollToBottom(); }
-    function scrollToBottom(){ setTimeout(()=>{ chatArea.scrollTop = chatArea.scrollHeight; }, 100); }
-    function disableInput(disabled){ userInput.disabled = disabled; sendBtn.disabled = disabled; }
+    function showTyping(show){ 
+      typingIndicator.classList.toggle('active', !!show); 
+      if (show) scrollToBottom(); 
+    }
+    
+    function scrollToBottom(){ 
+      setTimeout(()=>{ 
+        chatArea.scrollTop = chatArea.scrollHeight; 
+      }, 100); 
+    }
+    
+    function disableInput(disabled){ 
+      userInput.disabled = disabled; 
+      sendBtn.disabled = disabled; 
+    }
 
-    // Modified sendMessage function to use enhanced modal
+    // ---------------------------
+    // FIXED sendMessage - handles both pre and post preview clarifications
+    // ---------------------------
     async function sendMessage() {
       const message = userInput.value.trim();
       const highlights = document.getElementById('highlightInput').value.trim();
       
       if (!message) return;
       
-      // Get PDF text if uploaded
-      let pdfText = '';
-      const pdfStatus = document.getElementById('pdfUploadStatus');
-      if (pdfStatus && pdfStatus.dataset.extractedText) {
-        pdfText = pdfStatus.dataset.extractedText;
-      }
-      
-      // Display message
-      let displayMessage = message;
-      if (highlights) displayMessage += "\n\nHighlight Points:\n" + highlights;
-      addMessage(displayMessage, false);
-      userInput.value = ''; 
-      document.getElementById('highlightInput').value = ''; 
-      userInput.style.height = 'auto';
-      
-      disableInput(true); 
-      showTyping(true);
-      
-      try {
-        // Step 1: Initiate project and get clarification questions
-        const response = await fetch('/api/initiate-project/', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({
-            raw_input: message,
-            highlight_points: highlights,
-            pdf_text: pdfText
-          })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-          currentSessionId = data.session_id;
-          clarificationQuestionsData = data.questions;
-          
-          showTyping(false);
-          
-          // Show clarification modal
-          displayClarificationModal(data.questions);
-        } else {
-          throw new Error(data.error || 'Failed to initiate project');
-        }
-        
-      } catch (err) {
+      // Handle POST-PREVIEW clarification answers (OLD SYSTEM)
+      if (conversationState === 'clarifications') {
+        addMessage(message, false);
+        userInput.value = '';
+        userInput.style.height = 'auto';
+        disableInput(true);
+        showTyping(true);
+        await handleClarificationAnswer(message);
         showTyping(false);
-        addMessage('Error: ' + err.message, true);
-        console.error(err);
-      } finally {
         disableInput(false);
+        return;
       }
-    }
-
-    // ---------------------------
-    // Preview generation & flow
-    // ---------------------------
-    async function handleInitialInput(input, highlights) {
-      try {
-        const response = await fetch('/api/generate-preview/', {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ raw_input: input, highlight_points: highlights })
-        });
-        const data = await response.json();
-        if (data.error || typeof data.preview === 'undefined') {
-          const errorMessage = data.error || 'An unknown error occurred.';
-          addMessage(`Sorry, something went wrong: ${errorMessage}`, true);
-          console.error('Backend Error:', data);
-          return;
+      
+      // Handle INITIAL INPUT - Start new project with PRE-preview questions (NEW SYSTEM)
+      if (conversationState === 'initial') {
+        // Get PDF text if uploaded
+        let pdfText = '';
+        const pdfStatus = document.getElementById('pdfUploadStatus');
+        if (pdfStatus && pdfStatus.dataset.extractedText) {
+          pdfText = pdfStatus.dataset.extractedText;
         }
-        sessionId = data.session_id;
-        currentPreview = data.preview;
-        addMessage("Great! I've created a detailed preview. 📝 <strong>Tip:</strong> Select any text to get AI suggestions!", true, true);
-        addEditableContent(data.preview, async (newContent) => { currentPreview = newContent; addMessage("Preview updated!", true); });
-        const actionsHtml = `<div class="action-buttons"><button class="action-btn" onclick="acceptPreview()">✓ Looks Good, Continue</button></div>`;
-        addMessage(actionsHtml, true, true);
-        conversationState = 'preview_shown';
-      } catch (err) {
-        console.error("Error in handleInitialInput:", err);
-        addMessage("Sorry, something went wrong while generating the preview.", true);
+        
+        // Display message
+        let displayMessage = message;
+        if (highlights) displayMessage += "\n\nHighlight Points:\n" + highlights;
+        addMessage(displayMessage, false);
+        userInput.value = ''; 
+        document.getElementById('highlightInput').value = ''; 
+        userInput.style.height = 'auto';
+        
+        disableInput(true); 
+        showTyping(true);
+        
+        try {
+          // Step 1: Initiate project and get PRE-preview clarification questions
+          const response = await fetch('/api/initiate-project/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+              raw_input: message,
+              highlight_points: highlights,
+              pdf_text: pdfText
+            })
+          });
+          
+          const data = await response.json();
+          
+          if (data.success) {
+            currentSessionId = data.session_id;
+            sessionId = data.session_id; // Set both for compatibility
+            clarificationQuestionsData = data.questions;
+            
+            showTyping(false);
+            
+            // Show PRE-preview clarification modal
+            displayClarificationModal(data.questions);
+            
+            // Don't change state yet - will change after modal submission
+          } else {
+            throw new Error(data.error || 'Failed to initiate project');
+          }
+          
+        } catch (err) {
+          showTyping(false);
+          addMessage('Error: ' + err.message, true);
+          console.error(err);
+        } finally {
+          disableInput(false);
+        }
       }
     }
 
+    // ---------------------------
+    // Preview acceptance and POST-preview clarifications
+    // ---------------------------
     async function acceptPreview(){
       addMessage('Preview approved', false);
-      updateProgressStep(2);
+      updateProgressStep(3);
+      
+      // Change state to clarifications for POST-preview questions
       conversationState = 'clarifications';
+      
       showTyping(true);
       await askClarification();
       showTyping(false);
@@ -1371,14 +1372,21 @@
     async function askClarification(){
       try {
         const response = await fetch('/api/get-clarifications/', {
-          method:'POST', headers:{'Content-Type':'application/json'},
+          method:'POST', 
+          headers:{'Content-Type':'application/json'},
           body: JSON.stringify({ session_id: sessionId })
         });
         const data = await response.json();
+        
         if (data.questions && data.questions.includes('NO_MORE_QUESTIONS')) {
           addMessage('Perfect! I have all the information I need. Let me find solutions...', true);
-          updateProgressStep(3); showTyping(true); await loadRecommendations(); showTyping(false); return;
+          updateProgressStep(3); 
+          showTyping(true); 
+          await loadRecommendations(); 
+          showTyping(false); 
+          return;
         }
+        
         addMessage(`❓ ${data.questions}`, true);
         conversationState = 'clarifications';
       } catch (err) {
@@ -1393,10 +1401,23 @@
       let question = 'Question';
       for (let i = allMessages.length - 1; i >= 0; i--) {
         const text = allMessages[i].textContent;
-        if (text && text.includes('❓')) { question = text.replace('❓','').trim(); break; }
+        if (text && text.includes('❓')) { 
+          question = text.replace('❓','').trim(); 
+          break; 
+        }
       }
+      
       try {
-        await fetch('/api/save-clarification/', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ session_id: sessionId, question: question, answer: answer }) });
+        await fetch('/api/save-clarification/', { 
+          method:'POST', 
+          headers:{'Content-Type':'application/json'}, 
+          body: JSON.stringify({ 
+            session_id: sessionId, 
+            question: question, 
+            answer: answer 
+          }) 
+        });
+        
         addMessage('Thank you! Checking if I need more info...', true);
         showTyping(true);
         await askClarification();
@@ -1407,22 +1428,34 @@
       }
     }
 
+    // ---------------------------
+    // Recommendations
+    // ---------------------------
     async function loadRecommendations(){
       try {
-        const response = await fetch('/api/get-recommendations/', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ session_id: sessionId }) });
+        const response = await fetch('/api/get-recommendations/', { 
+          method:'POST', 
+          headers:{'Content-Type':'application/json'}, 
+          body: JSON.stringify({ session_id: sessionId }) 
+        });
         const data = await response.json();
+        
         addMessage('Based on your requirements, here are my recommendations:', true);
+        
         let internalText = typeof data.internal === 'string' ? data.internal : String(data.internal || '');
         let externalText = typeof data.external === 'string' ? data.external : String(data.external || '');
+        
         internalRecommendations = internalText.split('\n').filter(l=>l.trim());
         externalRecommendations = externalText.split('\n').filter(l=>l.trim());
         selectedInternal = [...internalRecommendations];
         selectedExternal = [...externalRecommendations];
+        
         if (selectedProducts.length > 0) {
           const selectedProductNames = allProducts.filter(p => selectedProducts.includes(p.id)).map(p => `${p.name} - Manually selected by user`);
           addMessage('<strong>📦 Your Selected Products:</strong>', true, true);
           addMessage(selectedProductNames.join('\n'), true);
         }
+        
         if (internalRecommendations.length > 0) {
           addMessage('<strong>🏢 AI Recommended Internal Solutions:</strong>', true, true);
           addEditableContent(internalRecommendations.join('\n'), async (newContent) => {
@@ -1431,6 +1464,7 @@
             addMessage('Internal recommendations updated!', true);
           });
         }
+        
         if (externalRecommendations.length > 0) {
           addMessage('<strong>🌐 External Technologies:</strong>', true, true);
           addEditableContent(externalRecommendations.join('\n'), async (newContent) => {
@@ -1439,69 +1473,140 @@
             addMessage('External recommendations updated!', true);
           });
         }
+        
         const finalBtnHtml = `<div class="action-buttons"><button class="action-btn" onclick="generateFinalNote()">📄 Generate Concept Note</button></div>`;
         addMessage(finalBtnHtml, true, true);
         conversationState = 'recommendations_shown';
+        
       } catch (err) {
         console.error('Error:', err);
         addMessage('Error loading recommendations: ' + (err.message || err), true);
       }
     }
 
+    // ---------------------------
+    // Final concept note generation
+    // ---------------------------
     async function generateFinalNote(){
       addMessage('Generate concept note', false);
       updateProgressStep(4);
       showTyping(true);
       disableInput(true);
+      
       try {
         const userSelectedProducts = allProducts.filter(p => selectedProducts.includes(p.id)).map(p => p.name);
         const allInternalSolutions = [...new Set([...userSelectedProducts, ...selectedInternal])];
+        
         const response = await fetch('/api/generate-final-note/', {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ session_id: sessionId, selected_internal: allInternalSolutions, selected_external: selectedExternal })
+          method:'POST', 
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ 
+            session_id: sessionId, 
+            selected_internal: allInternalSolutions, 
+            selected_external: selectedExternal 
+          })
         });
+        
         const data = await response.json();
         showTyping(false);
+        
         addMessage('🎉 Your concept note is ready! Select any text to refine it with AI suggestions.', true, true);
-        addEditableContent(data.concept_note, async (newContent) => { window.finalConceptNote = newContent; addMessage('Concept note updated!', true); });
+        addEditableContent(data.concept_note, async (newContent) => { 
+          window.finalConceptNote = newContent; 
+          addMessage('Concept note updated!', true); 
+        });
+        
         window.finalConceptNote = data.concept_note;
-        const actionsHtml = `<div style="display:flex;gap:10px;margin-top:15px"><button class="btn btn-success" onclick="downloadPDF()">⬇ Download PDF</button><button class="btn btn-secondary" onclick="location.reload()">🔄 New Project</button></div>`;
+        
+        const actionsHtml = `<div style="display:flex;gap:10px;margin-top:15px"><button class="btn btn-success" onclick="downloadPDF()">⬇ Download PDF</button><button class="btn btn-secondary" onclick="resetAndReload()">🔄 New Project</button></div>`;
         addMessage(actionsHtml, true, true);
         conversationState = 'completed';
+        
       } catch (err) {
         console.error('Error:', err);
         showTyping(false);
         addMessage('Error generating concept note: ' + (err.message || err), true);
-      } finally { disableInput(false); }
+      } finally { 
+        disableInput(false); 
+      }
     }
 
+    // ---------------------------
+    // PDF Download
+    // ---------------------------
     async function downloadPDF(){
-      if (!window.finalConceptNote || !sessionId) { alert('No concept note available to download!'); return; }
+      if (!window.finalConceptNote || !sessionId) { 
+        alert('No concept note available to download!'); 
+        return; 
+      }
+      
       showLoading(true);
+      
       try {
         const resp = await fetch('/api/download-pdf/', {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ session_id: sessionId, concept_note: window.finalConceptNote })
+          method:'POST', 
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ 
+            session_id: sessionId, 
+            concept_note: window.finalConceptNote 
+          })
         });
+        
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        
         const contentType = resp.headers.get('content-type') || '';
         if (!contentType.includes('application/pdf')) {
           const json = await resp.json();
           throw new Error(json.error || 'Invalid response from server');
         }
+        
         const blob = await resp.blob();
         if (blob.size === 0) throw new Error('PDF file is empty');
+        
         const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = `concept_note_${sessionId}.pdf`; document.body.appendChild(a); a.click(); a.remove(); window.URL.revokeObjectURL(url);
+        const a = document.createElement('a'); 
+        a.href = url; 
+        a.download = `concept_note_${sessionId}.pdf`; 
+        document.body.appendChild(a); 
+        a.click(); 
+        a.remove(); 
+        window.URL.revokeObjectURL(url);
+        
         addMessage('✅ PDF downloaded successfully!', true);
       } catch (err) {
         console.error('Error downloading PDF:', err);
         addMessage('❌ Error downloading PDF: ' + (err.message || err), true);
-      } finally { showLoading(false); }
+      } finally { 
+        showLoading(false); 
+      }
     }
 
     // ---------------------------
-    // Draggable suggestion popup utility
+    // Reset flow for new project
+    // ---------------------------
+    function resetConversationFlow() {
+      conversationState = 'initial';
+      sessionId = null;
+      currentSessionId = null;
+      currentPreview = '';
+      internalRecommendations = [];
+      externalRecommendations = [];
+      selectedInternal = [];
+      selectedExternal = [];
+      selectedProducts = [];
+      clarificationQuestionsData = [];
+      uploadedSupportingDocs = [];
+      window.finalConceptNote = null;
+      updateProgressStep(1);
+    }
+
+    function resetAndReload() {
+      resetConversationFlow();
+      location.reload();
+    }
+
+    // ---------------------------
+    // Draggable suggestion popup
     // ---------------------------
     function initSuggestionDrag(){
       const header = suggestionPopup.querySelector('.suggestion-header');
@@ -1521,7 +1626,6 @@
 
       document.addEventListener('mousemove', (e) => {
         if (!isDragging) return;
-        // clamp within viewport
         const width = suggestionPopup.offsetWidth;
         const height = suggestionPopup.offsetHeight;
         let left = e.clientX - offsetX;
@@ -1542,6 +1646,7 @@
         }
       });
     }
+
 
     // ---------------------------
     // Utility
