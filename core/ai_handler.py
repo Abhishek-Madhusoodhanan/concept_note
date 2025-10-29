@@ -391,11 +391,12 @@ Return just the single question text or "NO_MORE_QUESTIONS".
     return response.text.strip()
 
 
+# ai_handler.py
+
 def find_internal_matches(preview, all_clarifications, internal_products):
     """
-    Match client needs with internal products/modules
-    Returns: Narrative paragraphs explaining how internal solutions fit
-    OPTIMIZED: Uses cached text and smart filtering
+    Extract relevant FEATURES from internal products that can be integrated into client's project
+    Returns: Bullet-point recommendations explaining specific features/capabilities that fit their needs
     """
     
     # Step 1: Extract keywords for smart filtering
@@ -412,7 +413,7 @@ def find_internal_matches(preview, all_clarifications, internal_products):
         print(f"Keyword extraction error: {e}")
         keywords = ""
     
-    # Step 2: Smart product filtering
+    # Step 2: Smart product filtering and feature extraction
     products_content = ""
     relevant_products = []
     keyword_list = [k.strip() for k in keywords.split(',')] if keywords else []
@@ -439,133 +440,108 @@ def find_internal_matches(preview, all_clarifications, internal_products):
                 print(f"Error reading {product.name}: {e}")
                 continue
         
-        # Include high-relevance products or top 5
+        # Include high-relevance products
         if relevance_score > 0 or len(relevant_products) < 5:
             char_limit = 3000 if relevance_score > 2 else 1500
             products_content += f"\n\n=== {product.name} ===\n"
             if product.description:
                 products_content += f"Description: {product.description}\n"
-            products_content += f"Details: {pdf_text[:char_limit]}\n"
+            products_content += f"Available Features: {pdf_text[:char_limit]}\n"
             relevant_products.append((product.name, relevance_score))
     
     # Sort by relevance
     relevant_products.sort(key=lambda x: x[1], reverse=True)
     top_products = [p[0] for p in relevant_products[:8]]
     
-    # Step 3: Generate narrative recommendations
-    prompt = f"""You are a solution architect writing a recommendation report. Analyze the client's needs and explain how our internal solutions can address them.
+    # Step 3: Generate feature-focused recommendations (IN BULLET POINTS)
+    prompt = f"""Analyze which SPECIFIC FEATURES from our products can be ADDED to the client's project.
 
-CLIENT REQUIREMENTS:
-{preview}
+CLIENT NEEDS:
+{preview[:800]}
 
-CLARIFICATIONS:
-{all_clarifications}
+KEY DETAILS:
+{all_clarifications[:600]}
 
-AVAILABLE INTERNAL PRODUCTS/MODULES:
-{products_content}
+OUR PRODUCTS & FEATURES:
+{products_content[:3000]}
 
-MOST RELEVANT PRODUCTS (prioritize these): {', '.join(top_products)}
+FOCUS ON: {', '.join(top_products[:5])}
 
-TASK: Write 2-4 flowing paragraphs (250-350 words total) explaining how our internal solutions can be applied to this specific client project.
+INSTRUCTIONS:
+Write the output in BULLET POINTS format (• or -).
+Each point should clearly describe:
+- The feature name and source product
+- How it integrates into the client's project
+- The value or enhancement it brings
 
-CRITICAL RULES:
-1. Write in connected paragraphs, NOT lists or bullet points
-2. Naturally integrate product/module names into sentences
-3. Be SPECIFIC about how each solution addresses their actual needs
-4. Focus on the MOST RELEVANT products identified above
-5. Only mention products that GENUINELY fit their requirements
-6. If none fit well, say so honestly and suggest custom development
-7. Maximum 4-5 products mentioned - quality over quantity
-8. Use confident, consultative language
-9. Mention specific features/capabilities from the product details
+CRITICAL:
+- Mention specific FEATURES, not entire products
+- Use: "Integrate the [feature] from [product]"
+- NOT: "Use [product] as the solution"
+- Example: "• Integrate the AI diagnostic engine from Omnia to enable automated symptom analysis."
+- Focus on modular, integrable components
 
-WRITING STYLE:
-- Conversational but professional
-- Future-focused ("This would enable...", "By leveraging...")
-- Specific to their project context with real details
-- Natural flow between ideas
-- Include concrete benefits and outcomes
+Output 6–8 concise bullet points. After the bullet points, on a new line, ask the user for confirmation with the exact text:
+---
+Shall I proceed with these suggestions, or would you like to review/add other products?
+"""
 
-STRUCTURE EXAMPLE:
-"For [specific client need from requirements], our [Product Name] provides a proven foundation. The platform's [specific feature from PDF] directly addresses [their challenge], enabling them to [concrete outcome]. This can be customized to support [their specific workflow mentioned in clarifications], which would [measurable benefit].
-
-To complement this, [Another Product] handles [another requirement they mentioned]. Its [specific capability] has been successfully deployed in similar [industry] contexts, reducing [pain point] significantly. The integration between these systems would streamline [process] and improve [metric].
-
-For the [technical/functional requirement] emphasized in their clarifications, leveraging our [Technical Module] ensures [specific benefit]. This component includes [feature from PDF] that directly supports [their goal]. Combined with [integration point], this creates a comprehensive solution for [their stated objective]."
-
-Now write your recommendation paragraphs for this client project:"""
-
+    # CORRECTED INDENTATION IS HERE
     try:
         response = model.generate_content(prompt)
         return response.text.strip()
     except Exception as e:
-        return f"Error generating internal recommendations: {str(e)}"
-
-
+        return f"Error generating internal feature recommendations: {str(e)}"
 def search_external_solutions(preview, all_clarifications):
     """
-    Find external tools/modules/services (not competing products)
-    Returns: Narrative paragraphs explaining external technologies
+    Suggest external technologies (APIs, libraries, tools) that can be integrated
+    Returns: Bullet-point recommendations explaining external features and capabilities
     """
-    prompt = f"""You are a technology consultant writing a recommendation report. Suggest external tools and services that would enhance this client's project.
+    prompt = f"""Recommend SPECIFIC external technologies/features that can be integrated into this project.
 
-CLIENT REQUIREMENTS:
-{preview}
+CLIENT NEEDS:
+{preview[:800]}
 
-CLARIFICATIONS:
-{all_clarifications}
+KEY DETAILS:
+{all_clarifications[:600]}
 
-TASK: Write 2-4 flowing paragraphs (250-350 words total) describing external technologies, tools, and services that would complement this solution.
+INSTRUCTIONS:
+Write the output as BULLET POINTS (• or -).
+Each point should:
+- Mention the specific tool, API, or library
+- Explain briefly what it does
+- Describe how it can be integrated and its value
 
-CRITICAL RULES:
-1. Write in connected paragraphs, NOT lists or bullet points
-2. Naturally weave tool/service names into sentences
-3. Suggest COMPONENTS/TOOLS/SERVICES, not competing full products
-4. Focus on: frameworks, APIs, cloud services, libraries, platforms
-5. Explain specifically WHY each fits their project needs
-6. Briefly mention cost considerations naturally in context
-7. Prioritize modern, well-supported, practical options
-8. Recommend 5-7 technologies maximum
-9. Be specific about implementation approach
+CRITICAL:
+- Suggest SPECIFIC features/APIs, not full platforms
+- Example: "• Use Stripe Payment Intents API for secure, flexible online payment processing."
+- NOT: "Use Shopify for e-commerce."
+- Focus on 5–7 technologies maximum
+- Cover: Cloud, APIs, Frontend, Backend, Database, AI/ML
 
-WRITING STYLE:
-- Natural narrative flow between related technologies
-- Practical and actionable with concrete use cases
-- Specific to their technical requirements mentioned
-- Future-focused language about implementation
-- Brief cost notes integrated naturally (not as separate lines)
-- Group related technologies together logically
-
-STRUCTURE EXAMPLE:
-"For the payment processing requirements mentioned in the clarifications, integrating Stripe API would provide a robust, secure solution with industry-standard compliance. The platform offers extensive documentation and supports [specific payment method they need], making implementation straightforward. While Stripe operates on a freemium model with transaction fees, the cost structure scales naturally with their business growth, avoiding large upfront investments.
-
-The front-end architecture would benefit significantly from React's component-based approach, paired with Tailwind CSS for rapid, responsive design development. Both technologies are open-source with massive community support, ensuring long-term maintainability and access to pre-built components that can accelerate their [specific timeline]. For the real-time notification features they emphasized, Firebase Cloud Messaging provides reliable push capabilities across web and mobile platforms at no cost for their expected usage volume.
-
-On the infrastructure side, deploying on AWS Lambda or Google Cloud Functions would handle their variable load efficiently through serverless architecture. This approach eliminates the need for constant server management while automatically scaling during [their peak usage pattern]. For their data management needs requiring [specific database feature mentioned], PostgreSQL provides enterprise-grade reliability and the advanced querying capabilities necessary for their [specific use case], all while remaining cost-effective as an open-source solution."
-
-Now write your technology recommendations for this client project:"""
+Output 5–7 concise bullet points:"""
 
     try:
         response = model.generate_content(prompt)
         return response.text.strip()
     except Exception as e:
-        return f"Error generating external recommendations: {str(e)}"
-
+        return f"Error generating external feature recommendations: {str(e)}"
 def generate_concept_note(description, highlight_points, document_content, client_vision, extracted_requirements, solution_design, external_features, implementation_plan, reference_context):
     """
-    Generate a concise, professional concept note (2-3 pages) with unique, non-repetitive content per section.
-    FIXED: Now uses the actual paragraph-based recommendations properly
+    Generate a polished, corporate-level concept note (2-3 pages) with a strategic, professional tone.
+    Updated: Refined for MNC-level professionalism and removed all revenue-related content.
     """
 
     concept_prompt = f"""
-Generate a concise and professional concept note (STRICTLY 2-3 pages / 1200-1500 words) with strategic business language and only essential information.
+Generate a comprehensive, professional concept note (STRICTLY 2-3 pages / 1200-1500 words) that reflects the tone and structure of a top-tier consulting or technology firm document. 
+Use strategic, business-oriented language and focus on clarity, impact, and transformation — NOT on financials or revenue outcomes.
 
 PROJECT INPUTS:
 Description: {description}
 Highlights: {highlight_points}
 Detailed Content: {document_content}
 
-CLIENT'S SOLUTION VISION:
+CLIENT’S SOLUTION VISION:
 {client_vision}
 
 REQUIREMENTS ANALYSIS:
@@ -583,212 +559,114 @@ IMPLEMENTATION PLAN:
 {reference_context}
 
 CRITICAL INSTRUCTIONS FOR PROJECT TITLE:
-1. Analyze the PROJECT INPUTS and DETAILED CONTENT to identify the ACTUAL project/client name
-2. Look for mentions of: company names, project names, client organizations, product names
-3. DO NOT use generic words like "description", "document", or field labels
-4. If a clear client name exists (like "Friends School", "Precise Eye Hospital", "ABC Corporation"), USE IT
-5. Create a professional, descriptive title that reflects the REAL project essence and value proposition
-6. Format: "[Technology/Solution Type] for [Client Name]" (e.g., "AI-Powered Educational Platform for Friends School")
+1. Derive the actual client or project name from the given inputs.
+2. Identify company or organization names accurately.
+3. Avoid generic placeholders like "document" or "description."
+4. Use a format that highlights purpose and client (e.g., "AI-Enabled Health Consultation Platform for Precise Eye Hospital").
+5. Ensure the title conveys value and professionalism.
 
-CRITICAL CONTENT RULES - ABSOLUTE REQUIREMENTS:
-❌ NO REPETITION ALLOWED - Each section must contain completely UNIQUE information
-❌ NO overlapping content between sections - violating this is unacceptable
-❌ Each section serves ONE specific purpose - stay within that purpose
-✓ Be highly specific and contextual to the CLIENT'S actual needs
-✓ Use professional business language with strategic depth
-✓ Include quantifiable metrics where possible
-✓ Write with authority and technical precision
-✓ Keep paragraphs concise (3-5 sentences maximum)
+CONTENT RULES:
+❌ No repetition across sections.
+❌ No overlapping narratives.
+❌ No mention of revenue, profit, or monetary ROI.
+✓ Maintain unique, relevant, and contextual information per section.
+✓ Use confident, business-level English.
+✓ Emphasize efficiency, innovation, and stakeholder impact.
+✓ Keep paragraphs concise (3–5 sentences each).
 
-GENERATE CONCEPT NOTE WITH THIS STRUCTURE:
+GENERATE CONCEPT NOTE USING THIS STRUCTURE:
 
-[Create Compelling Project Title - Professional, Specific, Client-Focused]
+[Professional Project Title — Client-Focused and Descriptive]
 
 1. ABOUT US
-
-Gaude AI Solutions is a leading artificial intelligence innovation company transforming businesses across multiple industries since 2018. Founded by visionary technologists in Kerala, India, we've grown from a partnership firm into a global AI powerhouse with presence across India, UAE, Uzbekistan, and Kenya. Our expertise spans intelligent automation, data-driven decision systems, and AI-powered business transformation – empowering organizations to achieve measurable efficiency, scalability, and innovation excellence.
-
+GAUDE BUSINESS AND INFRASTRUCTURE SOLUTIONS PVT LTD is a strategic business unit committed to delivering proactive value to clients through tailored, high-quality solutions. 
+Operating from Technopark Campus, Trivandrum, under Kerala Start-Up Mission, GAUDE provides software development and managed services supported by a globally experienced management and technical team. 
+The organization focuses on Application Development, Maintenance, and Managed Services, consistently ensuring optimized delivery, innovation, and quality that drive measurable impact for its clients.
 
 2. EXECUTIVE SUMMARY
-
-[Write 1 concise paragraph (100-120 words):
-- Opening: The transformative opportunity (ONE sentence)
-- The strategic problem (ONE sentence)
-- The proposed solution with key differentiator (ONE sentence)
-- Expected business impact (ONE sentence)
-- Closing: Partnership value (ONE sentence)
-
-Use strategic language. Keep it brief and high-level ONLY.]
-
+[Compose one strategic paragraph (100–120 words) summarizing:
+- The transformative opportunity (1 sentence)
+- The key client challenge (1 sentence)
+- The proposed solution and differentiator (1 sentence)
+- The expected organizational impact (1 sentence)
+- The collaboration and value of partnership (1 sentence)
+Use formal, results-oriented language.]
 
 3. PROBLEM STATEMENT
-
-[Write 2 concise paragraphs (180-220 words):
-
-Paragraph 1 - Current State & Pain Points (3-4 sentences):
-- Client's current situation with context (industry, scale)
-- 2-3 specific challenges they face based on the CLIENT'S SOLUTION VISION and REQUIREMENTS
-- Business impact of these challenges
-
-Paragraph 2 - Strategic Urgency (2-3 sentences):
-- Cost of inaction
-- Why this matters NOW based on their actual requirements
-
-❌ DO NOT mention ANY solutions here - only problems from their requirements]
-
+[Write two concise paragraphs (180–220 words):
+Paragraph 1 – Describe the client’s current state and operational challenges drawn from REQUIREMENTS and VISION.
+Paragraph 2 – Highlight the strategic urgency and implications of inaction.
+Avoid any mention of solutions or financial implications; focus only on contextual problems.]
 
 4. PROPOSED SOLUTION
-
-[Write 2-3 paragraphs (250-300 words):
-
-CRITICAL: Use the INTERNAL SOLUTIONS ANALYSIS provided above. This section should explain WHAT the solution is and HOW it will be implemented using our internal products.
-
-If the INTERNAL SOLUTIONS ANALYSIS contains paragraph-based recommendations (not bullet points), use those paragraphs DIRECTLY here. Integrate them naturally into your solution description.
-
-Paragraph 1 - Solution Overview (3-4 sentences):
-- What comprehensive solution we're proposing
-- The overall technical approach and platform
-- Key technologies and accessibility
-
-Paragraph 2 - Internal Solutions Integration (This is where you use the INTERNAL SOLUTIONS content):
-[Take the paragraph-based content from INTERNAL SOLUTIONS ANALYSIS and integrate it here. If it's already in paragraph form, use it directly. If it's in bullet form, convert to flowing paragraphs explaining how our internal products/modules address their needs.]
-
-Paragraph 3 - Strategic Positioning (2-3 sentences):
-- Competitive advantage created
-- Unique differentiators based on our solutions
-
-Use future-focused language: "will transform," "will serve as," "will leverage"
-
-❌ DO NOT list features here - features go in section 5]
-
+[Write 2–3 paragraphs (250–300 words) using INTERNAL SOLUTIONS ANALYSIS as the core:
+Paragraph 1 – Overview of the proposed solution and technology landscape.
+Paragraph 2 – Integration of GAUDE’s internal solutions with client needs (use provided paragraphs directly if available).
+Paragraph 3 – Strategic advantage, differentiation, and alignment with client objectives.
+Use forward-looking, outcome-driven language like “will enhance,” “will streamline,” “will empower.”]
 
 5. KEY FEATURES AND FUNCTIONALITIES
-
-[Write in structured format (350-400 words):
-
-Introduction (1 sentence):
-"The solution offers comprehensive features designed to address [client's specific needs from requirements]."
-
-Then list 6-8 ESSENTIAL features only based on REQUIREMENTS ANALYSIS and EXTERNAL TECHNOLOGIES:
-
-For [Primary User Group from requirements]:
-• Feature Name: 2 sentences (what it does, why it matters to THEIR project)
-• Feature Name: 2 sentences (specific to their needs)
-
-For [Secondary User Group]:
-• Feature Name: 2 sentences
-• Feature Name: 2 sentences
-
-For Administrators/Management:
-• Feature Name: 2 sentences
-
-Advanced Capabilities:
-• AI-Powered Feature: 2 sentences (if mentioned in requirements)
-• Integration Feature: 2 sentences (from EXTERNAL TECHNOLOGIES if relevant)
-
-Draw specific features from REQUIREMENTS and EXTERNAL TECHNOLOGIES.
-❌ Only include CRITICAL features mentioned in their requirements, no generic features]
-
+[Structured format (350–400 words):
+Start with: “The proposed solution encompasses key functionalities tailored to address the client’s operational and technical needs.”
+List 6–8 essential, high-impact features relevant to primary, secondary, and administrative users.
+Use concise feature descriptions (2 sentences each) explaining purpose and client relevance.
+Integrate EXTERNAL TECHNOLOGIES and REQUIREMENTS content where appropriate.
+❌ Do not include generic or financial features.]
 
 6. IMPLEMENTATION APPROACH AND DEVELOPMENT PROCESS
-
-[Write ONLY phased rollout - NO methodology paragraphs (150-180 words):
-
-"The implementation will follow a strategic phased approach ensuring seamless adoption:"
-
-Phase I - [Foundation/Core Setup] (X weeks/months based on their timeline):
-• Scope: [What core components will be built - specific to their project]
-• Key Deliverables: [Specific outputs relevant to their needs]
-
-Phase II - [Enhancement/Integration] (X weeks/months):
-• Scope: [What additional features/integrations will be added]
-• Key Deliverables: [Specific outputs]
-
-Phase III - [Optimization/Scaling] (X weeks/months):
-• Scope: [What final optimizations and scaling work]
-• Key Deliverables: [Specific outputs]
-
-Closing: "This phased approach ensures iterative feedback, risk mitigation, and seamless stakeholder adoption."
-
-❌ NO methodology paragraphs - phases ONLY based on IMPLEMENTATION PLAN]
-
+[Write a structured, phase-wise roadmap (150–180 words):
+“The implementation will follow a phased approach to ensure scalability and seamless adoption.”
+Phase I – Foundation and Core Development
+Phase II – Integration and Enhancement
+Phase III – Optimization and Expansion
+Each phase should specify scope, deliverables, and timeframes based on the IMPLEMENTATION PLAN.
+Close with: “This phased execution ensures quality, adaptability, and stakeholder confidence.”]
 
 7. EXPECTED OUTCOMES AND BENEFITS
-
-[Write 2 paragraphs (200-240 words):
-
-Paragraph 1 - Quantifiable Outcomes (3-4 sentences):
-- Specific ROI and efficiency metrics based on their requirements
-- Revenue opportunities or cost savings mentioned
-- Scalability benefits for their context
-- Time savings or process improvements
-
-Paragraph 2 - Stakeholder Benefits (4-5 sentences):
-For EACH key stakeholder group from REQUIREMENTS (2-3 groups max):
-"[Specific Stakeholder from their requirements] will experience [specific benefits relevant to their needs]."
-
-Keep concise. Use impact language: "significantly improve," "drive measurable results," "enhance"
-
-❌ DO NOT repeat problem statement or solution details]
-
+[Two paragraphs (200–240 words):
+Paragraph 1 – Focus on measurable operational outcomes such as efficiency gains, process optimization, scalability, and user experience improvement.
+Paragraph 2 – Outline benefits for key stakeholder groups (end users, administrators, management) emphasizing collaboration, automation, and long-term sustainability.
+❌ Exclude any reference to revenue, profit, or monetary value.]
 
 8. CONCLUSION
-
-[Write 1 paragraph (80-100 words):
-- Reaffirm transformative potential specific to their project (1 sentence)
-- Partnership value with Gaude AI (1 sentence)
-- Next steps and call to action (1-2 sentences)
-
-Keep brief and powerful. NO generic summarization.]
-
+[One concise paragraph (80–100 words):
+Reiterate the project’s transformative value for the client.
+Highlight GAUDE’s partnership-driven approach and commitment to innovation.
+End with a confident, forward-looking statement outlining readiness for next steps and collaboration.]
 
 FORMATTING REQUIREMENTS:
-✓ Use section numbers (1., 2., 3., etc.)
-✓ Section titles in BOLD CAPS
-✓ Professional business prose with strategic language
-✓ Bullet points with detailed descriptions (• for main, o for sub-points)
-✓ Include client-specific terminology from their requirements
-✓ NO generic placeholders - use ACTUAL client context
-✓ NO brackets or [placeholder text] in final output
-✓ Total length: 1200-1500 words (STRICTLY 2-3 pages)
-✓ Keep paragraphs concise (2-4 sentences each)
-✓ Only include ESSENTIAL, RELEVANT information
-✓ Remove all fluff and unnecessary details
+✓ Use section numbering (1., 2., 3., etc.)
+✓ Section titles in **bold caps**
+✓ Business-grade writing: precise, objective, and strategic
+✓ Include client-specific terms where possible
+✓ Avoid placeholders or brackets
+✓ Keep total length 1200–1500 words (2–3 pages)
+✓ Maintain brevity and professionalism throughout
 
-TONE & STYLE GUIDELINES:
-✓ Confident and authoritative
-✓ Strategic and market-aware
-✓ Specific and contextual (never generic)
-✓ Future-focused with "will" statements
-✓ Professional business language
-✓ Technical depth where appropriate based on requirements
-✓ Value-driven throughout
+TONE AND STYLE:
+✓ Formal and authoritative
+✓ Strategic, insightful, and client-centered
+✓ Impact-driven and technically sound
+✓ No marketing fluff — focus on clarity and execution
+✓ Future-focused with “will” statements
+✓ Never mention revenue or financial metrics
 
-ABSOLUTE UNIQUENESS REQUIREMENTS - EACH SECTION HAS ONE PURPOSE:
-1. About Us = Company credentials ONLY
-2. Executive Summary = High-level strategic overview ONLY (no details)
-3. Problem Statement = Problems, challenges, urgency from REQUIREMENTS ONLY (no solutions)
-4. Proposed Solution = Technical architecture, platform approach, and HOW our INTERNAL SOLUTIONS will be used (use the paragraph content from INTERNAL SOLUTIONS ANALYSIS)
-5. Key Features = Detailed user-facing features from REQUIREMENTS ONLY (no architecture)
-6. Implementation = Phased rollout timeline ONLY (no methodology prose)
-7. Expected Outcomes = Measurable benefits and ROI ONLY (no problems or features)
-8. Conclusion = Forward momentum and next steps ONLY (no summarization)
+STRICT UNIQUENESS ACROSS SECTIONS:
+1. About Us → Company profile only
+2. Executive Summary → Overview and direction
+3. Problem Statement → Challenges only
+4. Proposed Solution → Solution architecture only
+5. Key Features → Functional specifications only
+6. Implementation → Execution roadmap only
+7. Expected Outcomes → Operational and stakeholder benefits only
+8. Conclusion → Vision alignment and next steps only
 
-CRITICAL FOR SECTION 4 (PROPOSED SOLUTION):
-- The INTERNAL SOLUTIONS ANALYSIS provided above contains paragraph-based recommendations
-- Use those paragraphs DIRECTLY in section 4 to explain how our products will be integrated
-- Do NOT convert them to bullet points
-- Do NOT summarize them generically
-- Keep the detailed, specific content about how each internal solution addresses their needs
-- This is the ONLY place where internal solutions should be discussed in detail
-
-❌ CRITICAL: If you find yourself repeating information from a previous section, STOP and write something entirely different. Each section must be completely distinct.
-
-Generate the complete, concise, professional concept note now:
+Generate the final polished concept note now.
 """
 
     response = model.generate_content(concept_prompt)
     return response.text.strip()
+
 
 def generate_pdf(concept_note_text, client_name=None):
     import re

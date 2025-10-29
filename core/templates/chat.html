@@ -1431,31 +1431,42 @@
     // ---------------------------
     // Recommendations
     // ---------------------------
+        // ---------------------------
+    // Recommendations
+    // ---------------------------
     async function loadRecommendations(){
       try {
-        const response = await fetch('/api/get-recommendations/', { 
-          method:'POST', 
-          headers:{'Content-Type':'application/json'}, 
-          body: JSON.stringify({ session_id: sessionId }) 
+        const response = await fetch('/api/get-recommendations/', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ session_id: sessionId })
         });
         const data = await response.json();
-        
+
         addMessage('Based on your requirements, here are my recommendations:', true);
-        
+
         let internalText = typeof data.internal === 'string' ? data.internal : String(data.internal || '');
         let externalText = typeof data.external === 'string' ? data.external : String(data.external || '');
-        
+
+        // NEW: Separate the recommendations from the confirmation question
+        let confirmationQuestion = "Shall I proceed with these suggestions, or would you like to review/add other products?";
+        const parts = internalText.split('---');
+        if (parts.length > 1) {
+            internalText = parts[0].trim();
+            confirmationQuestion = parts[1].trim();
+        }
+
         internalRecommendations = internalText.split('\n').filter(l=>l.trim());
         externalRecommendations = externalText.split('\n').filter(l=>l.trim());
-        selectedInternal = [...internalRecommendations];
+        selectedInternal = [...internalRecommendations]; // Pre-select AI suggestions by default
         selectedExternal = [...externalRecommendations];
-        
+
         if (selectedProducts.length > 0) {
           const selectedProductNames = allProducts.filter(p => selectedProducts.includes(p.id)).map(p => `${p.name} - Manually selected by user`);
-          addMessage('<strong>📦 Your Selected Products:</strong>', true, true);
+          addMessage('<strong>📦 Your Manually Selected Products:</strong>', true, true);
           addMessage(selectedProductNames.join('\n'), true);
         }
-        
+
         if (internalRecommendations.length > 0) {
           addMessage('<strong>🏢 AI Recommended Internal Solutions:</strong>', true, true);
           addEditableContent(internalRecommendations.join('\n'), async (newContent) => {
@@ -1464,7 +1475,7 @@
             addMessage('Internal recommendations updated!', true);
           });
         }
-        
+
         if (externalRecommendations.length > 0) {
           addMessage('<strong>🌐 External Technologies:</strong>', true, true);
           addEditableContent(externalRecommendations.join('\n'), async (newContent) => {
@@ -1473,17 +1484,97 @@
             addMessage('External recommendations updated!', true);
           });
         }
-        
-        const finalBtnHtml = `<div class="action-buttons"><button class="action-btn" onclick="generateFinalNote()">📄 Generate Concept Note</button></div>`;
-        addMessage(finalBtnHtml, true, true);
+
+        // NEW: Ask for confirmation instead of showing the "Generate" button directly
+        const confirmationHtml = `
+          <div class="message-content">
+              <p>${confirmationQuestion}</p>
+              <div class="action-buttons" style="margin-top: 15px;">
+                  <button class="action-btn" onclick="generateFinalNote()">✓ Yes, Generate Concept Note</button>
+                  <button class="action-btn" onclick="reviewProducts()">✏️ Review/Add Products</button>
+              </div>
+          </div>`;
+        addMessage(confirmationHtml, true, true);
+
         conversationState = 'recommendations_shown';
-        
+
       } catch (err) {
         console.error('Error:', err);
         addMessage('Error loading recommendations: ' + (err.message || err), true);
       }
     }
 
+    /**
+     * NEW FUNCTION: To handle the "Review/Add Products" button click.
+     * It guides the user to the product list and provides a final button to proceed.
+     */
+    function reviewProducts() {
+        addMessage("Of course. Please use the 'Available Internal Products' list on the right to select or deselect products. When you're ready, click 'Generate Concept Note' below.", true);
+
+        // Highlight the right sidebar to draw the user's attention
+        const rightSidebar = document.querySelector('.right-sidebar');
+        rightSidebar.style.transition = 'all 0.3s ease-in-out';
+        rightSidebar.style.boxShadow = '0 0 25px rgba(77, 158, 255, 0.5)';
+        rightSidebar.style.borderColor = '#4d9eff';
+        setTimeout(() => {
+            rightSidebar.style.boxShadow = '';
+            rightSidebar.style.borderColor = '';
+        }, 2500); // Highlight lasts for 2.5 seconds
+
+        // Show a final button to proceed after they've made their selections
+        const finalBtnHtml = `<div class="action-buttons"><button class="action-btn" onclick="generateFinalNote()">📄 Generate Concept Note</button></div>`;
+        addMessage(finalBtnHtml, true, true);
+    }
+
+    // ---------------------------
+    // Final concept note generation
+    // This function is now called by either of the new confirmation buttons.
+    // No changes are needed in this function itself.
+    // ---------------------------
+    async function generateFinalNote(){
+      addMessage('Generating the concept note with the selected solutions...', false);
+      updateProgressStep(4);
+      showTyping(true);
+      disableInput(true);
+
+      try {
+        // This logic correctly combines manually checked products with AI suggestions
+        const userSelectedProducts = allProducts.filter(p => selectedProducts.includes(p.id)).map(p => p.name);
+        const allInternalSolutions = [...new Set([...userSelectedProducts, ...selectedInternal])];
+
+        const response = await fetch('/api/generate-final-note/', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            session_id: sessionId,
+            selected_internal: allInternalSolutions,
+            selected_external: selectedExternal
+          })
+        });
+
+        const data = await response.json();
+        showTyping(false);
+
+        addMessage('🎉 Your concept note is ready! Select any text to refine it with AI suggestions.', true, true);
+        addEditableContent(data.concept_note, async (newContent) => {
+          window.finalConceptNote = newContent;
+          addMessage('Concept note updated!', true);
+        });
+
+        window.finalConceptNote = data.concept_note;
+
+        const actionsHtml = `<div style="display:flex;gap:10px;margin-top:15px"><button class="btn btn-success" onclick="downloadPDF()">⬇ Download PDF</button><button class="btn btn-secondary" onclick="resetAndReload()">🔄 New Project</button></div>`;
+        addMessage(actionsHtml, true, true);
+        conversationState = 'completed';
+
+      } catch (err) {
+        console.error('Error:', err);
+        showTyping(false);
+        addMessage('Error generating concept note: ' + (err.message || err), true);
+      } finally {
+        disableInput(false);
+      }
+    }
     // ---------------------------
     // Final concept note generation
     // ---------------------------
