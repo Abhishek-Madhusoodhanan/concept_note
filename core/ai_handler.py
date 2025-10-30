@@ -65,6 +65,62 @@ def extract_text_from_pdf(pdf_file):
         return f"Error reading PDF: {str(e)}"
     
 
+# In ai_handler.py
+
+def conversational_edit_suggestion(user_message, selected_text, conversation_history=None):
+    """
+    Performs precise, direct text editing based on user instructions without
+    adding any conversational filler.
+    """
+
+    conversation_text = ""
+    if conversation_history:
+        for msg in conversation_history[-3:]:  # include last 3 exchanges for context
+            conversation_text += f"User: {msg.get('user', '')}\nAI: {msg.get('ai', '')}\n"
+
+    # --- Start of The Fix ---
+    # The original prompt was contradictory. This new prompt is strict, direct,
+    # and gives the AI a clear example of the expected output format.
+
+    prompt = f"""
+You are a precise text-editing AI. Your only job is to modify the 'ORIGINAL TEXT' based on the 'USER'S INSTRUCTION' and return ONLY the modified text.
+
+ORIGINAL TEXT:
+---
+{selected_text}
+---
+
+USER'S INSTRUCTION:
+---
+{user_message}
+---
+
+CRITICAL RULES:
+1.  **Direct Modification Only:** You MUST modify the 'ORIGINAL TEXT' directly. Do not rewrite, rephrase, or add new content unless specifically instructed to.
+2.  **No Commentary:** You MUST NOT add any conversational text, explanations, greetings, or apologies. Never start your response with "Okay, here is...", "Sure, I have removed...", or similar phrases.
+3.  **Return Only the Result:** Your entire output must be ONLY the fully edited text.
+4.  **Exactness:** If the user asks to remove three lines, remove exactly three lines from the 'ORIGINAL TEXT'. If they ask to change one word, change only that word.
+
+EXAMPLE OF CORRECT BEHAVIOR:
+- ORIGINAL TEXT:
+    - Point A
+    - Point B
+    - Point C
+- USER'S INSTRUCTION: "remove the last point"
+- YOUR CORRECT OUTPUT:
+    - Point A
+    - Point B
+
+Now, apply the user's instruction to the original text provided above.
+"""
+    # --- End of The Fix ---
+
+    try:
+        response = model.generate_content(prompt)
+        return response.text.strip()
+    except Exception as e:
+        # Return a clean error message without conversational filler
+        return f"Error: Could not process the edit request. {str(e)}"
 def generate_pre_preview_questions(raw_input, pdf_text=None, highlight_points=None):
     """
     Generate intelligent clarification questions BEFORE creating the preview.
@@ -492,6 +548,7 @@ Shall I proceed with these suggestions, or would you like to review/add other pr
         return response.text.strip()
     except Exception as e:
         return f"Error generating internal feature recommendations: {str(e)}"
+    
 def search_external_solutions(preview, all_clarifications):
     """
     Suggest external technologies (APIs, libraries, tools) that can be integrated
@@ -526,6 +583,8 @@ Output 5–7 concise bullet points:"""
         return response.text.strip()
     except Exception as e:
         return f"Error generating external feature recommendations: {str(e)}"
+    
+
 def generate_concept_note(description, highlight_points, document_content, client_vision, extracted_requirements, solution_design, external_features, implementation_plan, reference_context):
     """
     Generate a polished, corporate-level concept note (2-3 pages) with a strategic, professional tone.

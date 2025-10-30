@@ -1,394 +1,1261 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>AI Concept Generator - Enhanced</title>
   <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0e27;color:#e4e6eb;height:100vh;display:flex;overflow:hidden}
-    .sidebar{width:280px;background:#151932;border-right:1px solid #2a2f4a;display:flex;flex-direction:column;padding:20px}
-    .sidebar-header{margin-bottom:30px}
-    .sidebar-header h1{font-size:24px;color:#4d9eff;margin-bottom:5px}
-    .sidebar-header p{font-size:13px;color:#8b92b0}
-    .progress-section{margin-bottom:30px}
-    .progress-section h3{font-size:14px;font-weight:600;margin-bottom:15px;color:#fff}
-    .progress-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:8px;margin-bottom:8px;cursor:pointer;transition:background 0.2s}
-    .progress-item:hover{background:#1e2442}
-    .progress-item.active{background:#1e2442;border-left:3px solid #4d9eff}
-    .progress-number{width:32px;height:32px;border-radius:50%;background:#2a2f4a;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px}
-    .progress-item.active .progress-number{background:#4d9eff;color:#0a0e27}
-    .progress-info h4{font-size:13px;font-weight:600;margin-bottom:2px}
-    .progress-info p{font-size:11px;color:#8b92b0}
-    .main-content{flex:1;display:flex;flex-direction:column;background:#0f1329}
-    .main-header{padding:20px 30px;border-bottom:1px solid #2a2f4a;background:#151932}
-    .main-header h2{font-size:22px;margin-bottom:5px}
-    .main-header p{font-size:13px;color:#8b92b0}
-    .chat-area{flex:1;overflow-y:auto;padding:30px;display:flex;flex-direction:column;gap:20px}
-    .chat-message{display:flex;gap:15px;animation:slideIn 0.3s ease}
-    @keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-    .message-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-    .bot-icon{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%)}
-    .user-icon{background:#2a2f4a}
-    .message-content{flex:1;background:#1a1f3a;padding:18px 20px;border-radius:12px;border:1px solid #2a2f4a;line-height:1.6}
-    .user-message .message-content{background:#2a2f4a}
-    .editable-box{background:#151932;border:1px solid #2a2f4a;border-radius:12px;padding:20px;margin:15px 0;position:relative}
-    .edit-btn-icon{position:absolute;top:15px;right:15px;background:#4d9eff;color:white;border:none;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:transform 0.2s}
-    .edit-btn-icon:hover{transform:scale(1.1)}
-    .edit-textarea{width:100%;min-height:250px;background:#0f1329;border:2px solid #4d9eff;border-radius:8px;padding:15px;color:#e4e6eb;font-family:inherit;font-size:14px;line-height:1.6;resize:vertical}
-    .edit-actions{display:flex;gap:10px;margin-top:12px}
-    .btn{padding:10px 20px;border:none;border-radius:8px;font-weight:600;cursor:pointer;transition:transform 0.2s;font-size:14px}
-    .btn:hover{transform:translateY(-2px)}
-    .btn-primary{background:#4d9eff;color:white}
-    .btn-secondary{background:#2a2f4a;color:#e4e6eb}
-    .btn-success{background:#00c853;color:white}
-    .action-buttons{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}
-    .action-btn{padding:10px 18px;background:transparent;border:2px solid #4d9eff;color:#4d9eff;border-radius:8px;cursor:pointer;font-weight:600;transition:all 0.3s;font-size:14px}
-    .action-btn:hover{background:#4d9eff;color:white}
-    .right-sidebar{width:350px;background:#151932;border-left:1px solid #2a2f4a;padding:25px;overflow-y:auto}
-    .right-sidebar h3{font-size:16px;margin-bottom:20px;display:flex;align-items:center;gap:10px}
-    .upload-section{margin-bottom:25px}
-    .upload-area{border:2px dashed #2a2f4a;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.3s;margin-bottom:15px}
-    .upload-area:hover{border-color:#4d9eff;background:#1a1f3a}
-    .upload-icon{font-size:32px;margin-bottom:10px}
-    .upload-area p{color:#8b92b0;font-size:12px;margin-bottom:10px}
-    .file-input{display:none}
-    .uploaded-file{background:#1a1f3a;padding:10px 12px;border-radius:8px;font-size:12px;display:flex;align-items:center;gap:8px;margin-top:10px}
-    .uploaded-file .remove-btn{margin-left:auto;background:#ff4444;color:white;border:none;width:20px;height:20px;border-radius:50%;cursor:pointer;font-size:12px}
-    .products-list{margin-top:25px}
-    .products-list h4{font-size:14px;margin-bottom:15px;color:#8b92b0}
-    .loading-products{text-align:center;color:#8b92b0;padding:20px;font-size:13px}
-    .product-item{background:#1a1f3a;padding:12px 15px;border-radius:8px;margin-bottom:8px;font-size:13px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all 0.2s;border:2px solid transparent}
-    .product-item:hover{background:#2a2f4a}
-    .product-item.selected{border-color:#4d9eff;background:#1e2442}
-    .product-item input[type="checkbox"]{width:18px;height:18px;cursor:pointer}
-    .product-item label{flex:1;cursor:pointer}
-    .input-area{padding:20px 30px;background:#151932;border-top:1px solid #2a2f4a}
-    .input-wrapper{display:flex;gap:12px;align-items:flex-end}
-    .input-field{flex:1;background:#1a1f3a;border:2px solid #2a2f4a;border-radius:12px;padding:12px 18px;color:#e4e6eb;font-family:inherit;font-size:14px;resize:none;min-height:50px;max-height:120px;transition:border-color 0.3s}
-    .input-field:focus{outline:none;border-color:#4d9eff}
-    .send-btn{width:50px;height:50px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border:none;border-radius:12px;color:white;font-size:20px;cursor:pointer;transition:transform 0.2s;display:flex;align-items:center;justify-content:center}
-    .send-btn:hover:not(:disabled){transform:scale(1.05)}
-    .send-btn:disabled{opacity:0.5;cursor:not-allowed}
-    .typing-indicator{display:none;padding:15px;background:#1a1f3a;border-radius:12px;width:fit-content}
-    .typing-indicator.active{display:flex;gap:6px}
-    .typing-dot{width:8px;height:8px;background:#4d9eff;border-radius:50%;animation:typing 1.4s infinite}
-    .typing-dot:nth-child(2){animation-delay:0.2s}
-    .typing-dot:nth-child(3){animation-delay:0.4s}
-    @keyframes typing{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-8px)}}
-    ::-webkit-scrollbar{width:8px;height:8px}
-    ::-webkit-scrollbar-track{background:#151932}
-    ::-webkit-scrollbar-thumb{background:#2a2f4a;border-radius:4px}
-    ::-webkit-scrollbar-thumb:hover{background:#4d9eff}
-    .loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(10,14,39,0.8);display:none;align-items:center;justify-content:center;z-index:1000}
-    .loading-overlay.active{display:flex}
-    .loading-spinner{width:50px;height:50px;border:4px solid #2a2f4a;border-top-color:#4d9eff;border-radius:50%;animation:spin 1s linear infinite}
-    @keyframes spin{to{transform:rotate(360deg)}}
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box
+    }
 
-    /* AI Suggestion Styles */
-    .ai-suggestion-popup{position:absolute;background:linear-gradient(135deg,#1a1f3a 0%,#151932 100%);border:2px solid #4d9eff;border-radius:12px;padding:20px;box-shadow:0 10px 40px rgba(77,158,255,0.3);z-index:1001;min-width:400px;max-width:600px;display:none;animation:popupSlide 0.3s ease}
-    .ai-suggestion-box{max-height:300px;overflow-y:auto;overflow-x:hidden}
-    @keyframes popupSlide{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
-    .ai-suggestion-popup.active{display:block}
-    .suggestion-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px;padding-bottom:10px;border-bottom:1px solid #2a2f4a;cursor:move}
-    .suggestion-header h4{color:#4d9eff;font-size:16px;display:flex;align-items:center;gap:8px}
-    .close-suggestion{background:none;border:none;color:#8b92b0;font-size:24px;cursor:pointer;padding:0;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:6px;transition:all 0.2s}
-    .close-suggestion:hover{background:#2a2f4a;color:#ff4444}
-    .original-text{background:#0f1329;border-left:3px solid #ff6b6b;padding:12px;margin-bottom:15px;border-radius:6px;font-size:14px;line-height:1.6;color:#c4c6d0}
-    .suggestion-options{display:flex;gap:8px;margin-bottom:15px;flex-wrap:wrap}
-    .suggestion-type-btn{padding:8px 14px;background:#2a2f4a;border:1px solid #3a3f5a;color:#e4e6eb;border-radius:8px;cursor:pointer;font-size:13px;transition:all 0.2s}
-    .suggestion-type-btn:hover{background:#3a3f5a;border-color:#4d9eff}
-    .suggestion-type-btn.active{background:#4d9eff;border-color:#4d9eff;color:white}
-    .suggested-text{background:#0f1329;border-left:3px solid #4d9eff;padding:12px;margin-bottom:15px;border-radius:6px;font-size:14px;line-height:1.6;color:#e4e6eb;min-height:60px}
-    .suggestion-loading{display:flex;align-items:center;justify-content:center;gap:8px;padding:20px;color:#8b92b0}
-    .suggestion-spinner{width:20px;height:20px;border:2px solid #2a2f4a;border-top-color:#4d9eff;border-radius:50%;animation:spin 0.8s linear infinite}
-    .suggestion-actions{display:flex;gap:10px;justify-content:flex-end}
-    .suggestion-btn{padding:10px 20px;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;transition:all 0.2s}
-    .suggestion-btn-accept{background:#00c853;color:white}
-    .suggestion-btn-accept:hover{background:#00a844;transform:translateY(-2px)}
-    .suggestion-btn-reject{background:#2a2f4a;color:#e4e6eb}
-    .suggestion-btn-reject:hover{background:#3a3f5a}
-    .multiple-suggestions{display:flex;flex-direction:column;gap:10px;margin-bottom:15px}
-    .suggestion-option{background:#1a1f3a;border:2px solid #2a2f4a;padding:12px;border-radius:8px;cursor:pointer;transition:all 0.2s}
-    .suggestion-option:hover{border-color:#4d9eff;background:#1e2442}
-    .suggestion-option.selected{border-color:#4d9eff;background:#1e2442}
-    .suggestion-label{font-size:11px;color:#8b92b0;text-transform:uppercase;margin-bottom:6px;font-weight:600}
-    .selection-context-menu{position:absolute;background:#151932;border:1px solid #4d9eff;border-radius:8px;padding:8px;box-shadow:0 4px 20px rgba(0,0,0,0.3);z-index:1000;display:none}
-    .selection-context-menu.active{display:flex;gap:6px;animation:fadeIn 0.2s ease}
-    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-    .context-menu-btn{padding:8px 12px;background:#2a2f4a;border:none;color:#e4e6eb;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;transition:all 0.2s;display:flex;align-items:center;gap:6px}
-    .context-menu-btn:hover{background:#4d9eff;color:white}
-    .content-display{user-select:text;cursor:text}
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0e27;
+      color: #e4e6eb;
+      height: 100vh;
+      display: flex;
+      overflow: hidden
+    }
 
-    /* Modal Overlay */
-    .modal-overlay{
-      position:fixed;
-      top:0;left:0;right:0;bottom:0;
-      background:rgba(10,14,39,0.95);
-      display:none;
-      align-items:center;
-      justify-content:center;
-      z-index:2000;
-      backdrop-filter:blur(10px);
+    .sidebar {
+      width: 280px;
+      background: #151932;
+      border-right: 1px solid #2a2f4a;
+      display: flex;
+      flex-direction: column;
+      padding: 20px
     }
-    .modal-overlay.active{display:flex}
-    
-    /* Pre-Preview Clarification Modal */
-    .clarification-modal{
-      background:linear-gradient(135deg,#151932 0%,#0f1329 100%);
-      border:2px solid #4d9eff;
-      border-radius:16px;
-      padding:30px;
-      max-width:700px;
-      width:90%;
-      max-height:85vh;
-      overflow-y:auto;
-      box-shadow:0 20px 60px rgba(77,158,255,0.3);
-      animation:modalSlide 0.4s ease;
+
+    .sidebar-header {
+      margin-bottom: 30px
     }
-    
-    @keyframes modalSlide{
-      from{opacity:0;transform:translateY(-30px) scale(0.95)}
-      to{opacity:1;transform:translateY(0) scale(1)}
+
+    .sidebar-header h1 {
+      font-size: 24px;
+      color: #4d9eff;
+      margin-bottom: 5px
     }
-    
-    .modal-header{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      margin-bottom:25px;
-      padding-bottom:15px;
-      border-bottom:2px solid #2a2f4a;
+
+    .sidebar-header p {
+      font-size: 13px;
+      color: #8b92b0
     }
-    
-    .modal-header h2{
-      color:#4d9eff;
-      font-size:24px;
-      display:flex;
-      align-items:center;
-      gap:12px;
+
+    .progress-section {
+      margin-bottom: 30px
     }
-    
-    .modal-close-btn{
-      background:none;
-      border:none;
-      color:#8b92b0;
-      font-size:28px;
-      cursor:pointer;
-      padding:0;
-      width:36px;
-      height:36px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      border-radius:8px;
-      transition:all 0.2s;
+
+    .progress-section h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: #fff
     }
-    
-    .modal-close-btn:hover{
-      background:#2a2f4a;
-      color:#ff4444;
+
+    .progress-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: background 0.2s
     }
-    
-    .modal-intro{
-      background:#1a1f3a;
-      border-left:3px solid #4d9eff;
-      padding:15px;
-      border-radius:8px;
-      margin-bottom:25px;
-      font-size:14px;
-      line-height:1.6;
+
+    .progress-item:hover {
+      background: #1e2442
     }
-    
-    .clarification-question{
-      background:#1a1f3a;
-      border:2px solid #2a2f4a;
-      border-radius:12px;
-      padding:20px;
-      margin-bottom:20px;
-      transition:all 0.3s;
+
+    .progress-item.active {
+      background: #1e2442;
+      border-left: 3px solid #4d9eff
     }
-    
-    .clarification-question:hover{
-      border-color:#4d9eff;
-      background:#1e2442;
+
+    .progress-number {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #2a2f4a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px
     }
-    
-    .question-header{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      margin-bottom:15px;
+
+    .progress-item.active .progress-number {
+      background: #4d9eff;
+      color: #0a0e27
     }
-    
-    .question-label{
-      flex:1;
-      font-size:15px;
-      font-weight:600;
-      color:#e4e6eb;
-      line-height:1.5;
+
+    .progress-info h4 {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 2px
     }
-    
-    .question-badge{
-      padding:4px 10px;
-      border-radius:6px;
-      font-size:11px;
-      font-weight:600;
-      text-transform:uppercase;
-      margin-left:10px;
+
+    .progress-info p {
+      font-size: 11px;
+      color: #8b92b0
     }
-    
-    .badge-critical{background:#ff4444;color:white}
-    .badge-high{background:#ff9800;color:white}
-    .badge-medium{background:#4d9eff;color:white}
-    .badge-low{background:#2a2f4a;color:#8b92b0}
-    
-    .detected-value{
-      background:#0f1329;
-      border:1px solid #4d9eff;
-      padding:10px 12px;
-      border-radius:8px;
-      margin:10px 0;
-      font-size:14px;
-      color:#4d9eff;
-      display:flex;
-      align-items:center;
-      gap:8px;
+
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #0f1329
     }
-    
-    .question-input{
-      width:100%;
-      background:#0f1329;
-      border:2px solid #2a2f4a;
-      border-radius:8px;
-      padding:12px;
-      color:#e4e6eb;
-      font-family:inherit;
-      font-size:14px;
-      transition:border-color 0.3s;
+
+    .main-header {
+      padding: 20px 30px;
+      border-bottom: 1px solid #2a2f4a;
+      background: #151932
     }
-    
-    .question-input:focus{
-      outline:none;
-      border-color:#4d9eff;
+
+    .main-header h2 {
+      font-size: 22px;
+      margin-bottom: 5px
     }
-    
-    .question-textarea{
-      min-height:80px;
-      resize:vertical;
+
+    .main-header p {
+      font-size: 13px;
+      color: #8b92b0
     }
-    
-    .question-actions{
-      display:flex;
-      gap:10px;
-      margin-top:12px;
+
+    .chat-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px
     }
-    
-    .skip-btn{
-      padding:8px 16px;
-      background:#2a2f4a;
-      border:1px solid #3a3f5a;
-      color:#8b92b0;
-      border-radius:8px;
-      cursor:pointer;
-      font-size:13px;
-      transition:all 0.2s;
+
+    .chat-message {
+      display: flex;
+      gap: 15px;
+      animation: slideIn 0.3s ease
     }
-    
-    .skip-btn:hover{
-      background:#3a3f5a;
-      color:#e4e6eb;
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
     }
-    
-    .skip-btn:disabled{
-      opacity:0.5;
-      cursor:not-allowed;
+
+    .message-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0
     }
-    
-    .upload-support-btn{
-      padding:10px 18px;
-      background:transparent;
-      border:2px solid #4d9eff;
-      color:#4d9eff;
-      border-radius:8px;
-      cursor:pointer;
-      font-weight:600;
-      transition:all 0.3s;
-      display:flex;
-      align-items:center;
-      gap:8px;
+
+    .bot-icon {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)
     }
-    
-    .upload-support-btn:hover{
-      background:#4d9eff;
-      color:white;
+
+    .user-icon {
+      background: #2a2f4a
     }
-    
-    .modal-footer{
-      display:flex;
-      gap:12px;
-      justify-content:flex-end;
-      margin-top:30px;
-      padding-top:20px;
-      border-top:2px solid #2a2f4a;
+
+    .message-content {
+      flex: 1;
+      background: #1a1f3a;
+      padding: 18px 20px;
+      border-radius: 12px;
+      border: 1px solid #2a2f4a;
+      line-height: 1.6
     }
-    
-    .modal-btn{
-      padding:12px 24px;
-      border:none;
-      border-radius:10px;
-      font-weight:600;
-      cursor:pointer;
-      font-size:15px;
-      transition:all 0.3s;
-      display:flex;
-      align-items:center;
-      gap:8px;
+
+    .user-message .message-content {
+      background: #2a2f4a
     }
-    
-    .modal-btn-secondary{
-      background:#2a2f4a;
-      color:#e4e6eb;
+
+    .editable-box {
+      background: #151932;
+      border: 1px solid #2a2f4a;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 15px 0;
+      position: relative
     }
-    
-    .modal-btn-secondary:hover{
-      background:#3a3f5a;
+
+    .edit-btn-icon {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: #4d9eff;
+      color: white;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s
     }
-    
-    .modal-btn-primary{
-      background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
-      color:white;
+
+    .edit-btn-icon:hover {
+      transform: scale(1.1)
     }
-    
-    .modal-btn-primary:hover{
-      transform:translateY(-2px);
-      box-shadow:0 8px 20px rgba(102,126,234,0.4);
+
+    .edit-textarea {
+      width: 100%;
+      min-height: 250px;
+      background: #0f1329;
+      border: 2px solid #4d9eff;
+      border-radius: 8px;
+      padding: 15px;
+      color: #e4e6eb;
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1.6;
+      resize: vertical
     }
-    
-    .modal-btn:disabled{
-      opacity:0.5;
-      cursor:not-allowed;
-      transform:none !important;
+
+    .edit-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px
     }
-    
-    .upload-indicator{
-      background:#1a1f3a;
-      padding:12px;
-      border-radius:8px;
-      margin-top:10px;
-      font-size:13px;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      color:#00c853;
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+      font-size: 14px
+    }
+
+    .btn:hover {
+      transform: translateY(-2px)
+    }
+
+    .btn-primary {
+      background: #4d9eff;
+      color: white
+    }
+
+    .btn-secondary {
+      background: #2a2f4a;
+      color: #e4e6eb
+    }
+
+    .btn-success {
+      background: #00c853;
+      color: white
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 15px
+    }
+
+    .action-btn {
+      padding: 10px 18px;
+      background: transparent;
+      border: 2px solid #4d9eff;
+      color: #4d9eff;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s;
+      font-size: 14px
+    }
+
+    .action-btn:hover {
+      background: #4d9eff;
+      color: white
+    }
+
+    .right-sidebar {
+      width: 350px;
+      background: #151932;
+      border-left: 1px solid #2a2f4a;
+      padding: 25px;
+      overflow-y: auto
+    }
+
+    .right-sidebar h3 {
+      font-size: 16px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .upload-section {
+      margin-bottom: 25px
+    }
+
+    .upload-area {
+      border: 2px dashed #2a2f4a;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-bottom: 15px
+    }
+
+    .upload-area:hover {
+      border-color: #4d9eff;
+      background: #1a1f3a
+    }
+
+    .upload-icon {
+      font-size: 32px;
+      margin-bottom: 10px
+    }
+
+    .upload-area p {
+      color: #8b92b0;
+      font-size: 12px;
+      margin-bottom: 10px
+    }
+
+    .file-input {
+      display: none
+    }
+
+    .uploaded-file {
+      background: #1a1f3a;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px
+    }
+
+    .uploaded-file .remove-btn {
+      margin-left: auto;
+      background: #ff4444;
+      color: white;
+      border: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 12px
+    }
+
+    .products-list {
+      margin-top: 25px
+    }
+
+    .products-list h4 {
+      font-size: 14px;
+      margin-bottom: 15px;
+      color: #8b92b0
+    }
+
+    .loading-products {
+      text-align: center;
+      color: #8b92b0;
+      padding: 20px;
+      font-size: 13px
+    }
+
+    .product-item {
+      background: #1a1f3a;
+      padding: 12px 15px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 2px solid transparent
+    }
+
+    .product-item:hover {
+      background: #2a2f4a
+    }
+
+    .product-item.selected {
+      border-color: #4d9eff;
+      background: #1e2442
+    }
+
+    .product-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer
+    }
+
+    .product-item label {
+      flex: 1;
+      cursor: pointer
+    }
+
+    .input-area {
+      padding: 20px 30px;
+      background: #151932;
+      border-top: 1px solid #2a2f4a
+    }
+
+    .input-wrapper {
+      display: flex;
+      gap: 12px;
+      align-items: flex-end
+    }
+
+    .input-field {
+      flex: 1;
+      background: #1a1f3a;
+      border: 2px solid #2a2f4a;
+      border-radius: 12px;
+      padding: 12px 18px;
+      color: #e4e6eb;
+      font-family: inherit;
+      font-size: 14px;
+      resize: none;
+      min-height: 50px;
+      max-height: 120px;
+      transition: border-color 0.3s
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: #4d9eff
+    }
+
+    .send-btn {
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      transition: transform 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center
+    }
+
+    .send-btn:hover:not(:disabled) {
+      transform: scale(1.05)
+    }
+
+    .send-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed
+    }
+
+    .typing-indicator {
+      display: none;
+      padding: 15px;
+      background: #1a1f3a;
+      border-radius: 12px;
+      width: fit-content
+    }
+
+    .typing-indicator.active {
+      display: flex;
+      gap: 6px
+    }
+
+    .typing-dot {
+      width: 8px;
+      height: 8px;
+      background: #4d9eff;
+      border-radius: 50%;
+      animation: typing 1.4s infinite
+    }
+
+    .typing-dot:nth-child(2) {
+      animation-delay: 0.2s
+    }
+
+    .typing-dot:nth-child(3) {
+      animation-delay: 0.4s
+    }
+
+    @keyframes typing {
+
+      0%,
+      60%,
+      100% {
+        transform: translateY(0)
+      }
+
+      30% {
+        transform: translateY(-8px)
+      }
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #151932
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #2a2f4a;
+      border-radius: 4px
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #4d9eff
+    }
+
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(10, 14, 39, 0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000
+    }
+
+    .loading-overlay.active {
+      display: flex
+    }
+
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid #2a2f4a;
+      border-top-color: #4d9eff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    .ai-suggestion-popup {
+      position: absolute;
+      background: linear-gradient(135deg, #1a1f3a 0%, #151932 100%);
+      border: 2px solid #4d9eff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 10px 40px rgba(77, 158, 255, 0.3);
+      z-index: 1001;
+      min-width: 400px;
+      max-width: 600px;
+      display: none;
+      animation: popupSlide 0.3s ease
+    }
+
+    .ai-suggestion-box {
+      max-height: 300px;
+      overflow-y: auto;
+      overflow-x: hidden
+    }
+
+    @keyframes popupSlide {
+      from {
+        opacity: 0;
+        transform: translateY(-10px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    .ai-suggestion-popup.active {
+      display: block
+    }
+
+    .suggestion-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #2a2f4a;
+      cursor: move
+    }
+
+    .suggestion-header h4 {
+      color: #4d9eff;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .close-suggestion {
+      background: none;
+      border: none;
+      color: #8b92b0;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: all 0.2s
+    }
+
+    .close-suggestion:hover {
+      background: #2a2f4a;
+      color: #ff4444
+    }
+
+    .original-text {
+      background: #0f1329;
+      border-left: 3px solid #ff6b6b;
+      padding: 12px;
+      margin-bottom: 15px;
+      border-radius: 6px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #c4c6d0
+    }
+
+    .suggestion-options {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 15px;
+      flex-wrap: wrap
+    }
+
+    .suggestion-type-btn {
+      padding: 8px 14px;
+      background: #2a2f4a;
+      border: 1px solid #3a3f5a;
+      color: #e4e6eb;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s
+    }
+
+    .suggestion-type-btn:hover {
+      background: #3a3f5a;
+      border-color: #4d9eff
+    }
+
+    .suggestion-type-btn.active {
+      background: #4d9eff;
+      border-color: #4d9eff;
+      color: white
+    }
+
+    .suggested-text {
+      background: #0f1329;
+      border-left: 3px solid #4d9eff;
+      padding: 12px;
+      margin-bottom: 15px;
+      border-radius: 6px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #e4e6eb;
+      min-height: 60px
+    }
+
+    .suggestion-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 20px;
+      color: #8b92b0
+    }
+
+    .suggestion-spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #2a2f4a;
+      border-top-color: #4d9eff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite
+    }
+
+    .suggestion-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end
+    }
+
+    .suggestion-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s
+    }
+
+    .suggestion-btn-accept {
+      background: #00c853;
+      color: white
+    }
+
+    .suggestion-btn-accept:hover {
+      background: #00a844;
+      transform: translateY(-2px)
+    }
+
+    .suggestion-btn-reject {
+      background: #2a2f4a;
+      color: #e4e6eb
+    }
+
+    .suggestion-btn-reject:hover {
+      background: #3a3f5a
+    }
+
+    .multiple-suggestions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 15px
+    }
+
+    .suggestion-option {
+      background: #1a1f3a;
+      border: 2px solid #2a2f4a;
+      padding: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s
+    }
+
+    .suggestion-option:hover {
+      border-color: #4d9eff;
+      background: #1e2442
+    }
+
+    .suggestion-option.selected {
+      border-color: #4d9eff;
+      background: #1e2442
+    }
+
+    .suggestion-label {
+      font-size: 11px;
+      color: #8b92b0;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      font-weight: 600
+    }
+
+    .selection-context-menu {
+      position: absolute;
+      background: #151932;
+      border: 1px solid #4d9eff;
+      border-radius: 8px;
+      padding: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      display: none
+    }
+
+    .selection-context-menu.active {
+      display: flex;
+      gap: 6px;
+      animation: fadeIn 0.2s ease
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0
+      }
+
+      to {
+        opacity: 1
+      }
+    }
+
+    .context-menu-btn {
+      padding: 8px 12px;
+      background: #2a2f4a;
+      border: none;
+      color: #e4e6eb;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px
+    }
+
+    .context-menu-btn:hover {
+      background: #4d9eff;
+      color: white
+    }
+
+    .content-display {
+      user-select: text;
+      cursor: text
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(10, 14, 39, 0.95);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      backdrop-filter: blur(10px);
+    }
+
+    .modal-overlay.active {
+      display: flex
+    }
+
+    .clarification-modal {
+      background: linear-gradient(135deg, #151932 0%, #0f1329 100%);
+      border: 2px solid #4d9eff;
+      border-radius: 16px;
+      padding: 30px;
+      max-width: 700px;
+      width: 90%;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(77, 158, 255, 0.3);
+      animation: modalSlide 0.4s ease;
+    }
+
+    @keyframes modalSlide {
+      from {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.95)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1)
+      }
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #2a2f4a;
+    }
+
+    .modal-header h2 {
+      color: #4d9eff;
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .modal-close-btn {
+      background: none;
+      border: none;
+      color: #8b92b0;
+      font-size: 28px;
+      cursor: pointer;
+      padding: 0;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .modal-close-btn:hover {
+      background: #2a2f4a;
+      color: #ff4444;
+    }
+
+    .modal-intro {
+      background: #1a1f3a;
+      border-left: 3px solid #4d9eff;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 25px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .clarification-question {
+      background: #1a1f3a;
+      border: 2px solid #2a2f4a;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      transition: all 0.3s;
+    }
+
+    .clarification-question:hover {
+      border-color: #4d9eff;
+      background: #1e2442;
+    }
+
+    .question-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
+
+    .question-label {
+      flex: 1;
+      font-size: 15px;
+      font-weight: 600;
+      color: #e4e6eb;
+      line-height: 1.5;
+    }
+
+    .question-badge {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-left: 10px;
+    }
+
+    .badge-critical {
+      background: #ff4444;
+      color: white
+    }
+
+    .badge-high {
+      background: #ff9800;
+      color: white
+    }
+
+    .badge-medium {
+      background: #4d9eff;
+      color: white
+    }
+
+    .badge-low {
+      background: #2a2f4a;
+      color: #8b92b0
+    }
+
+    .detected-value {
+      background: #0f1329;
+      border: 1px solid #4d9eff;
+      padding: 10px 12px;
+      border-radius: 8px;
+      margin: 10px 0;
+      font-size: 14px;
+      color: #4d9eff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .question-input {
+      width: 100%;
+      background: #0f1329;
+      border: 2px solid #2a2f4a;
+      border-radius: 8px;
+      padding: 12px;
+      color: #e4e6eb;
+      font-family: inherit;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+
+    .question-input:focus {
+      outline: none;
+      border-color: #4d9eff;
+    }
+
+    .question-textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    .question-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .skip-btn {
+      padding: 8px 16px;
+      background: #2a2f4a;
+      border: 1px solid #3a3f5a;
+      color: #8b92b0;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    .skip-btn:hover {
+      background: #3a3f5a;
+      color: #e4e6eb;
+    }
+
+    .skip-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .upload-support-btn {
+      padding: 10px 18px;
+      background: transparent;
+      border: 2px solid #4d9eff;
+      color: #4d9eff;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .upload-support-btn:hover {
+      background: #4d9eff;
+      color: white;
+    }
+
+    .modal-footer {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 2px solid #2a2f4a;
+    }
+
+    .modal-btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 15px;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-btn-secondary {
+      background: #2a2f4a;
+      color: #e4e6eb;
+    }
+
+    .modal-btn-secondary:hover {
+      background: #3a3f5a;
+    }
+
+    .modal-btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .modal-btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .modal-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .upload-indicator {
+      background: #1a1f3a;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 10px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #00c853;
+    }
+
+    /* Mini Chatbot Styles */
+    #miniChatbot {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 380px;
+      max-height: 550px;
+      background: linear-gradient(135deg, #151932 0%, #0f1329 100%);
+      border: 2px solid #4d9eff;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(77, 158, 255, 0.3);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 3000;
+    }
+
+    .mini-chat-header {
+      padding: 12px 16px;
+      background: #1a1f3a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #2a2f4a;
+    }
+
+    .mini-chat-header h4 {
+      color: #4d9eff;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mini-chat-close {
+      background: none;
+      border: none;
+      color: #8b92b0;
+      font-size: 20px;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .mini-chat-close:hover {
+      color: #ff4444;
+    }
+
+    #miniChatMessages {
+      padding: 15px;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .mini-chat-input-area {
+      padding: 12px;
+      border-top: 1px solid #2a2f4a;
+      display: flex;
+      gap: 8px;
+    }
+
+    #miniChatInput {
+      flex: 1;
+      padding: 10px 12px;
+      background: #0f1329;
+      border: 2px solid #2a2f4a;
+      border-radius: 8px;
+      color: #e4e6eb;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    #miniChatInput:focus {
+      outline: none;
+      border-color: #4d9eff;
+    }
+
+    .mini-chat-send-btn {
+      background: #4d9eff;
+      border: none;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .mini-chat-send-btn:hover {
+      background: #3a8ee6;
+    }
+
+    .mini-chat-message {
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .mini-chat-message.user {
+      background: #2a2f4a;
+      color: #e4e6eb;
+      align-self: flex-end;
+      max-width: 80%;
+    }
+
+    .mini-chat-message.ai {
+      background: #1a1f3a;
+      color: #4d9eff;
+      align-self: flex-start;
+      max-width: 85%;
+    }
+
+    .apply-edit-btn {
+      margin-top: 10px;
+      padding: 6px 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #00c853;
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+
+    .apply-edit-btn:hover {
+      background: #00a844;
     }
   </style>
 </head>
-<body>
-  <!-- Loading Overlay -->
-  <div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"></div></div>
 
-  <!-- Pre-Preview Clarification Modal -->
+<body>
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+  </div>
+
   <div class="modal-overlay" id="clarificationModal">
     <div class="clarification-modal">
       <div class="modal-header">
@@ -398,16 +1265,14 @@
         </h2>
         <button class="modal-close-btn" onclick="closeClarificationModal()">×</button>
       </div>
-      
+
       <div class="modal-intro">
         <strong>📋 Help us create a better preview!</strong><br>
         Answer these questions based on your input. You can skip optional questions if not applicable.
       </div>
-      
-      <div id="clarificationQuestions">
-        <!-- Questions will be dynamically inserted here -->
-      </div>
-      
+
+      <div id="clarificationQuestions"></div>
+
       <div class="modal-footer">
         <button class="modal-btn modal-btn-secondary" onclick="skipAllClarifications()">
           Skip All & Continue
@@ -419,21 +1284,49 @@
     </div>
   </div>
 
-  <!-- Sidebar -->
   <div class="sidebar">
-    <div class="sidebar-header"><h1>AI Concept Generator</h1><p>Transform ideas into professional concepts</p></div>
+    <div class="sidebar-header">
+      <h1>AI Concept Generator</h1>
+      <p>Transform ideas into professional concepts</p>
+    </div>
     <div class="progress-section">
       <h3>Project Progress</h3>
-      <div class="progress-item active" id="step1"><div class="progress-number">1</div><div class="progress-info"><h4>Idea Input</h4><p>Describe your initial concept</p></div></div>
-      <div class="progress-item" id="step2"><div class="progress-number">2</div><div class="progress-info"><h4>Clarification</h4><p>Answer key questions</p></div></div>
-      <div class="progress-item" id="step3"><div class="progress-number">3</div><div class="progress-info"><h4>Solution Mapping</h4><p>Find internal solutions</p></div></div>
-      <div class="progress-item" id="step4"><div class="progress-number">4</div><div class="progress-info"><h4>Concept Generation</h4><p>Create final concept note</p></div></div>
+      <div class="progress-item active" id="step1">
+        <div class="progress-number">1</div>
+        <div class="progress-info">
+          <h4>Idea Input</h4>
+          <p>Describe your initial concept</p>
+        </div>
+      </div>
+      <div class="progress-item" id="step2">
+        <div class="progress-number">2</div>
+        <div class="progress-info">
+          <h4>Clarification</h4>
+          <p>Answer key questions</p>
+        </div>
+      </div>
+      <div class="progress-item" id="step3">
+        <div class="progress-number">3</div>
+        <div class="progress-info">
+          <h4>Solution Mapping</h4>
+          <p>Find internal solutions</p>
+        </div>
+      </div>
+      <div class="progress-item" id="step4">
+        <div class="progress-number">4</div>
+        <div class="progress-info">
+          <h4>Concept Generation</h4>
+          <p>Create final concept note</p>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Main Content -->
   <div class="main-content">
-    <div class="main-header"><h2>Concept Generation Assistant</h2><p>I'll help you transform your ideas into professional concept notes</p></div>
+    <div class="main-header">
+      <h2>Concept Generation Assistant</h2>
+      <p>I'll help you transform your ideas into professional concept notes</p>
+    </div>
 
     <div class="chat-area" id="chatArea">
       <div class="chat-message">
@@ -450,13 +1343,18 @@
           • Select any text in the generated preview to get AI-powered improvements
         </div>
       </div>
-      <div class="typing-indicator" id="typingIndicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
+      <div class="typing-indicator" id="typingIndicator">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
     </div>
 
     <div class="input-area">
       <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:10px">
         <label for="highlightInput" style="font-size:13px;color:#8b92b0">Highlight Points (Optional)</label>
-        <textarea id="highlightInput" class="input-field" placeholder="Enter key points or focus areas..." rows="1"></textarea>
+        <textarea id="highlightInput" class="input-field" placeholder="Enter key points or focus areas..."
+          rows="1"></textarea>
       </div>
       <div class="input-wrapper">
         <textarea id="userInput" class="input-field" placeholder="Describe your project idea..." rows="1"></textarea>
@@ -465,7 +1363,6 @@
     </div>
   </div>
 
-  <!-- Right Sidebar -->
   <div class="right-sidebar">
     <h3>📋 Project Requirements</h3>
 
@@ -485,20 +1382,23 @@
         <p>Upload Audio Requirements</p>
         <button class="btn btn-primary" style="font-size:12px;padding:8px 16px">Choose Audio</button>
       </div>
-      <input id="audioInput" class="file-input" type="file" accept=".mp3,.wav,.m4a,.flac,.aac,.ogg" onchange="handleAudioUpload(event)">
+      <input id="audioInput" class="file-input" type="file" accept=".mp3,.wav,.m4a,.flac,.aac,.ogg"
+        onchange="handleAudioUpload(event)">
       <div id="audioUploadStatus"></div>
     </div>
 
     <div class="products-list">
       <h4>Available Internal Products</h4>
-      <div id="productsList"><div class="loading-products">Loading...</div></div>
+      <div id="productsList">
+        <div class="loading-products">Loading...</div>
+      </div>
     </div>
   </div>
 
-  <!-- Context Menu and AI Suggestion Popup -->
   <div class="selection-context-menu" id="contextMenu">
     <button class="context-menu-btn" onclick="showAISuggestion('improve')">✨ Improve</button>
     <button class="context-menu-btn" onclick="showAISuggestion('multiple')">🎯 Get Options</button>
+    <button class="context-menu-btn" onclick="openMiniChatForSelection()">💬 Chat Edit</button>
   </div>
 
   <div class="ai-suggestion-popup" id="suggestionPopup">
@@ -510,14 +1410,20 @@
     <div class="original-text" id="originalText"></div>
 
     <div class="suggestion-options" id="suggestionOptions">
-      <button class="suggestion-type-btn active" data-type="improve" onclick="changeSuggestionType('improve', event)">✨ Improve</button>
-      <button class="suggestion-type-btn" data-type="expand" onclick="changeSuggestionType('expand', event)">📝 Expand</button>
-      <button class="suggestion-type-btn" data-type="simplify" onclick="changeSuggestionType('simplify', event)">🎯 Simplify</button>
-      <button class="suggestion-type-btn" data-type="rephrase" onclick="changeSuggestionType('rephrase', event)">🔄 Rephrase</button>
+      <button class="suggestion-type-btn active" data-type="improve" onclick="changeSuggestionType('improve', event)">✨
+        Improve</button>
+      <button class="suggestion-type-btn" data-type="expand" onclick="changeSuggestionType('expand', event)">📝
+        Expand</button>
+      <button class="suggestion-type-btn" data-type="simplify" onclick="changeSuggestionType('simplify', event)">🎯
+        Simplify</button>
+      <button class="suggestion-type-btn" data-type="rephrase" onclick="changeSuggestionType('rephrase', event)">🔄
+        Rephrase</button>
     </div>
 
     <div class="suggested-text" id="suggestedText">
-      <div class="suggestion-loading"><div class="suggestion-spinner"></div><span>Generating suggestion...</span></div>
+      <div class="suggestion-loading">
+        <div class="suggestion-spinner"></div><span>Generating suggestion...</span>
+      </div>
     </div>
 
     <div class="suggestion-actions">
@@ -526,10 +1432,22 @@
     </div>
   </div>
 
- <script>
-    // ---------------------------
-    // State variables
-    // ---------------------------
+  <div id="miniChatbot">
+    <div class="mini-chat-header">
+      <h4>🤖 AI Edit Assistant</h4>
+      <button class="mini-chat-close" onclick="closeMiniChat()">×</button>
+    </div>
+    
+    <div id="miniChatMessages"></div>
+    
+    <div class="mini-chat-input-area">
+      <input id="miniChatInput" type="text" placeholder="Type your request..." 
+             onkeypress="if(event.key==='Enter') sendMiniChatMessage()">
+      <button class="mini-chat-send-btn" onclick="sendMiniChatMessage()">Send</button>
+    </div>
+  </div>
+
+  <script>
     let sessionId = null;
     let conversationState = 'initial';
     let currentPreview = '';
@@ -545,10 +1463,16 @@
     let currentSuggestion = '';
     let currentEditableElement = null;
 
-    // Enhanced modal state variables
     let currentSessionId = null;
     let clarificationQuestionsData = [];
     let uploadedSupportingDocs = [];
+
+    let miniChatOpen = false;
+    let miniChatConversation = [];
+    let currentSelectedTextForChat = '';
+    let currentSelectedHTMLForChat = ''; // NEW: Store HTML version
+    let currentEditableElementForChat = null;
+    let currentSelectionRangeForChat = null; // NEW: Store the actual range
 
     const chatArea = document.getElementById('chatArea');
     const userInput = document.getElementById('userInput');
@@ -567,22 +1491,18 @@
       console.log('✅ Initialization complete');
     };
 
-    // ---------------------------
-    // Enhanced Modal Functions
-    // ---------------------------
     function displayClarificationModal(questions) {
       const container = document.getElementById('clarificationQuestions');
       container.innerHTML = '';
-      
+
       questions.forEach((q, index) => {
         const questionDiv = document.createElement('div');
         questionDiv.className = 'clarification-question';
         questionDiv.id = `question-${q.id}`;
-        
+
         let importanceClass = `badge-${q.importance}`;
         let inputHTML = '';
-        
-        // Build input based on field type
+
         if (q.field_type === 'confirmation' && q.detected_value) {
           inputHTML = `
             <div class="detected-value">
@@ -620,18 +1540,10 @@
                      style="display:none"
                      onchange="handleSupportingDocUpload(${q.id}, event)">
               <button class="upload-support-btn" onclick="document.getElementById('support-file-${q.id}').click()">
-                📎 Choose Supporting Document
+                🔎 Choose Supporting Document
               </button>
               <div id="upload-status-${q.id}"></div>
             </div>
-            <script>
-              document.querySelectorAll('input[name="yesno-${q.id}"]').forEach(radio => {
-                radio.addEventListener('change', (e) => {
-                  const uploadArea = document.getElementById('upload-area-${q.id}');
-                  uploadArea.style.display = e.target.value === 'yes' ? 'block' : 'none';
-                });
-              });
-            <\/script>
           `;
         } else {
           inputHTML = `
@@ -641,7 +1553,7 @@
                    placeholder="Enter your answer...">
           `;
         }
-        
+
         questionDiv.innerHTML = `
           <div class="question-header">
             <div class="question-label">
@@ -654,41 +1566,52 @@
             ${q.skip_allowed ? `<button class="skip-btn" onclick="skipQuestion(${q.id})">Skip Question</button>` : ''}
           </div>
         `;
-        
+
         container.appendChild(questionDiv);
+
+        if (q.field_type === 'yes_no_upload') {
+          setTimeout(() => {
+            document.querySelectorAll(`input[name="yesno-${q.id}"]`).forEach(radio => {
+              radio.addEventListener('change', (e) => {
+                const uploadArea = document.getElementById(`upload-area-${q.id}`);
+                uploadArea.style.display = e.target.value === 'yes' ? 'block' : 'none';
+              });
+            });
+          }, 100);
+        }
       });
-      
+
       document.getElementById('clarificationModal').classList.add('active');
     }
-    
+
     function skipQuestion(questionId) {
       const questionDiv = document.getElementById(`question-${questionId}`);
       questionDiv.style.opacity = '0.5';
       questionDiv.style.pointerEvents = 'none';
-      
+
       const input = document.getElementById(`answer-${questionId}`);
       if (input) input.disabled = true;
     }
-    
+
     async function handleSupportingDocUpload(questionId, event) {
       const file = event.target.files[0];
       if (!file) return;
-      
+
       const statusDiv = document.getElementById(`upload-status-${questionId}`);
       statusDiv.innerHTML = '<div style="color:#4d9eff;font-size:13px">📤 Uploading...</div>';
-      
+
       try {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('session_id', currentSessionId);
-        
+
         const response = await fetch('/api/upload-supporting-document/', {
           method: 'POST',
           body: formData
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
           uploadedSupportingDocs.push(data.filename);
           statusDiv.innerHTML = `
@@ -704,40 +1627,37 @@
         console.error(err);
       }
     }
-    
+
     function closeClarificationModal() {
       if (confirm('Are you sure? Your answers will be lost and a basic preview will be generated.')) {
         document.getElementById('clarificationModal').classList.remove('active');
         generateEnhancedPreview();
       }
     }
-    
+
     function skipAllClarifications() {
       if (confirm('Skip all clarifications? We recommend answering at least the critical questions for best results.')) {
         document.getElementById('clarificationModal').classList.remove('active');
         generateEnhancedPreview();
       }
     }
-    
+
     async function submitClarifications() {
-      // Collect all answers
       const answers = [];
-      
+
       for (const question of clarificationQuestionsData) {
         const questionDiv = document.getElementById(`question-${question.id}`);
-        
-        // Skip if question was skipped
+
         if (questionDiv.style.opacity === '0.5') {
           continue;
         }
-        
+
         let value = null;
-        
+
         if (question.field_type === 'yes_no_upload') {
           const selected = document.querySelector(`input[name="yesno-${question.id}"]:checked`);
           value = selected ? selected.value : 'no';
-          
-          // If they uploaded files, note that
+
           if (value === 'yes' && uploadedSupportingDocs.length > 0) {
             value = `Yes - Uploaded: ${uploadedSupportingDocs.join(', ')}`;
           }
@@ -747,14 +1667,13 @@
             value = input.value.trim();
           }
         }
-        
-        // For critical questions, ensure they're answered
+
         if (!question.skip_allowed && !value) {
           alert(`Please answer: ${question.question}`);
           document.getElementById(`answer-${question.id}`).focus();
           return;
         }
-        
+
         if (value) {
           answers.push({
             id: question.id,
@@ -765,37 +1684,31 @@
           });
         }
       }
-      
-      // Save answers
+
       try {
         const submitBtn = document.getElementById('submitClarificationsBtn');
         submitBtn.disabled = true;
         submitBtn.innerHTML = '⏳ Saving...';
-        
+
         const response = await fetch('/api/save-pre-preview-answers/', {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             session_id: currentSessionId,
             answers: answers
           })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
-          // Close modal
           document.getElementById('clarificationModal').classList.remove('active');
-          
-          // Show confirmation message
           addMessage('✅ Clarifications saved! Generating enhanced preview...', true);
-          
-          // Generate preview with clarifications
           await generateEnhancedPreview();
         } else {
           throw new Error(data.error || 'Failed to save answers');
         }
-        
+
       } catch (err) {
         alert('Error saving clarifications: ' + err.message);
         console.error(err);
@@ -804,45 +1717,44 @@
         submitBtn.innerHTML = '✓ Submit & Generate Preview';
       }
     }
-    
+
     async function generateEnhancedPreview() {
       showTyping(true);
       disableInput(true);
-      
+
       try {
         const response = await fetch('/api/generate-preview/', {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             session_id: currentSessionId
           })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.preview) {
           sessionId = data.session_id;
           currentPreview = data.preview;
-          
+
           showTyping(false);
-          
-          addMessage("Great! I've created an enhanced preview based on your clarifications. 🔍 <strong>Tip:</strong> Select any text to get AI suggestions!", true, true);
-          
+
+          addMessage("Great! I've created an enhanced preview based on your clarifications. 📝 <strong>Tip:</strong> Select any text to get AI suggestions!", true, true);
+
           addEditableContent(data.preview, async (newContent) => {
             currentPreview = newContent;
             addMessage("Preview updated!", true);
           });
-          
+
           const actionsHtml = `<div class="action-buttons"><button class="action-btn" onclick="acceptPreview()">✓ Looks Good, Continue</button></div>`;
           addMessage(actionsHtml, true, true);
-          
-          // Set state to preview_shown (NOT clarifications)
+
           conversationState = 'preview_shown';
           updateProgressStep(2);
         } else {
           throw new Error(data.error || 'Failed to generate preview');
         }
-        
+
       } catch (err) {
         showTyping(false);
         addMessage('Error generating preview: ' + err.message, true);
@@ -853,9 +1765,6 @@
       }
     }
 
-    // ---------------------------
-    // AI Suggestion init & selection
-    // ---------------------------
     function initAISuggestionFeature() {
       document.addEventListener('click', (e) => {
         if (!contextMenu.contains(e.target) && !suggestionPopup.contains(e.target)) {
@@ -867,6 +1776,7 @@
         if (e.key === 'Escape') {
           closeSuggestion();
           hideContextMenu();
+          closeMiniChat();
         }
       });
     }
@@ -885,7 +1795,7 @@
     }
 
     function handleTextSelection(e) {
-      try { e?.preventDefault(); } catch (err) {}
+      try { e?.preventDefault(); } catch (err) { }
       const selection = window.getSelection();
       selectedText = selection.toString().trim();
 
@@ -906,7 +1816,7 @@
     function showContextMenu(e) {
       if (!sessionId) return;
       contextMenu.classList.add('active');
-      const x = Math.min((e?.clientX || 100), window.innerWidth - 250);
+      const x = Math.min((e?.clientX || 100), window.innerWidth - 300);
       const y = (e?.clientY || 100) - 50;
       contextMenu.style.left = `${x}px`;
       contextMenu.style.top = `${y}px`;
@@ -947,11 +1857,251 @@
       }
     }
 
+    function openMiniChatForSelection() {
+      if (!selectedText || selectedText.trim() === '') {
+        alert('Please select some text to edit first.');
+        hideContextMenu();
+        return;
+      }
+
+      // Store both plain text and HTML version
+      currentSelectedTextForChat = selectedText;
+      currentEditableElementForChat = currentEditableElement;
+      
+      // NEW: Capture the HTML content of the selection
+      try {
+        if (selectedRange) {
+          currentSelectionRangeForChat = selectedRange.cloneRange();
+          const fragment = selectedRange.cloneContents();
+          const div = document.createElement('div');
+          div.appendChild(fragment);
+          currentSelectedHTMLForChat = div.innerHTML;
+        }
+      } catch (err) {
+        console.log('Could not capture HTML selection:', err);
+        currentSelectedHTMLForChat = '';
+      }
+
+      hideContextMenu();
+
+      const chatBox = document.getElementById('miniChatbot');
+      const messagesContainer = document.getElementById('miniChatMessages');
+
+      messagesContainer.innerHTML = `
+        <div class="mini-chat-message ai">
+          👋 Hi! I can help you refine this section.<br><br>
+          <strong>Selected text:</strong><br>
+          <em style="font-size:12px;color:#8b92b0;">${escapeHtml(currentSelectedTextForChat.substring(0, 100))}${currentSelectedTextForChat.length > 100 ? '...' : ''}</em><br><br>
+          Try: <em>"Keep first 2 lines and add 3 more like them."</em>
+        </div>
+      `;
+
+      chatBox.style.display = 'flex';
+      miniChatOpen = true;
+      miniChatConversation = [];
+      
+      document.getElementById('miniChatInput').focus();
+    }
+
+    function closeMiniChat() {
+      document.getElementById('miniChatbot').style.display = 'none';
+      miniChatOpen = false;
+      currentSelectedTextForChat = '';
+      currentSelectedHTMLForChat = '';
+      currentEditableElementForChat = null;
+      currentSelectionRangeForChat = null;
+      miniChatConversation = [];
+    }
+
+    async function sendMiniChatMessage() {
+      const input = document.getElementById('miniChatInput');
+      const message = input.value.trim();
+      if (!message) return;
+
+      const messagesContainer = document.getElementById('miniChatMessages');
+
+      const userMsg = document.createElement('div');
+      userMsg.className = 'mini-chat-message user';
+      userMsg.textContent = message;
+      messagesContainer.appendChild(userMsg);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+      miniChatConversation.push({ user: message });
+
+      const loadingMsg = document.createElement('div');
+      loadingMsg.id = 'miniChatLoading';
+      loadingMsg.className = 'mini-chat-message ai';
+      loadingMsg.innerHTML = '🤖 Thinking...';
+      messagesContainer.appendChild(loadingMsg);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+      input.value = '';
+
+      try {
+        const response = await fetch('/api/chat-edit-assistant/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: message,
+            selected_text: currentSelectedTextForChat,
+            conversation: miniChatConversation
+          })
+        });
+
+        const data = await response.json();
+        document.getElementById('miniChatLoading').remove();
+
+        const aiMsg = document.createElement('div');
+        aiMsg.className = 'mini-chat-message ai';
+
+        const replyText = document.createElement('div');
+        replyText.textContent = data.reply || '⚠️ No response from AI.';
+        aiMsg.appendChild(replyText);
+
+        const applyBtn = document.createElement('button');
+        applyBtn.className = 'apply-edit-btn';
+        applyBtn.textContent = '✅ Apply to Preview';
+        applyBtn.onclick = function() {
+          applyAIEdit(data.reply);
+        };
+        aiMsg.appendChild(applyBtn);
+
+        messagesContainer.appendChild(aiMsg);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+        miniChatConversation.push({ user: message, ai: data.reply });
+
+      } catch (err) {
+        console.error('Mini Chat error:', err);
+        const loading = document.getElementById('miniChatLoading');
+        if (loading) loading.remove();
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'mini-chat-message ai';
+        errorMsg.style.background = '#ff4444';
+        errorMsg.textContent = 'Error communicating with AI.';
+        messagesContainer.appendChild(errorMsg);
+      }
+    }
+
+    function applyAIEdit(newText) {
+      try {
+        if (!currentEditableElementForChat) {
+          alert('No editable text element found.');
+          return;
+        }
+
+        const displayDiv = currentEditableElementForChat.querySelector('.content-display');
+        const textarea = currentEditableElementForChat.querySelector('.edit-textarea');
+        
+        if (!displayDiv) {
+          alert('Could not find content display element.');
+          return;
+        }
+
+        // Strategy 1: Use the stored range to replace content directly (BEST - preserves all formatting)
+        if (currentSelectionRangeForChat && displayDiv.contains(currentSelectionRangeForChat.commonAncestorContainer)) {
+          try {
+            // Delete the selected content
+            currentSelectionRangeForChat.deleteContents();
+            
+            // Format the new text properly
+            const formattedNewText = formatNewTextForInsertion(newText);
+            
+            // Insert the new formatted content
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = formattedNewText;
+            const fragment = document.createDocumentFragment();
+            while (tempDiv.firstChild) {
+              fragment.appendChild(tempDiv.firstChild);
+            }
+            currentSelectionRangeForChat.insertNode(fragment);
+            
+            // Update the textarea with the new plain text content
+            if (textarea) {
+              textarea.value = displayDiv.textContent || displayDiv.innerText;
+            }
+            
+            showNotification('✅ AI edit applied successfully!', 'success');
+            closeMiniChat();
+            return;
+          } catch (err) {
+            console.log('Range-based replacement failed, trying fallback:', err);
+          }
+        }
+
+        // Strategy 2: Replace in textarea and reformat (FALLBACK)
+        if (textarea) {
+          const originalText = textarea.value;
+          const updatedText = originalText.replace(currentSelectedTextForChat, newText);
+          textarea.value = updatedText;
+          displayDiv.innerHTML = formatContent(updatedText);
+          
+          showNotification('✅ AI edit applied successfully!', 'success');
+          closeMiniChat();
+          return;
+        }
+
+        // Strategy 3: Direct HTML replacement (LAST RESORT)
+        const originalHTML = displayDiv.innerHTML;
+        const selectedEscaped = escapeHtml(currentSelectedTextForChat);
+        
+        if (originalHTML.includes(selectedEscaped)) {
+          const newEscaped = escapeHtml(newText);
+          displayDiv.innerHTML = originalHTML.replace(selectedEscaped, newEscaped);
+        } else {
+          // Plain text replacement with reformatting
+          const originalText = displayDiv.textContent || displayDiv.innerText;
+          const updatedText = originalText.replace(currentSelectedTextForChat, newText);
+          displayDiv.innerHTML = formatContent(updatedText);
+        }
+
+        showNotification('✅ AI edit applied successfully!', 'success');
+        closeMiniChat();
+        
+      } catch (err) {
+        console.error('Error applying AI edit:', err);
+        alert('Failed to apply AI edit. Check console for details.');
+      }
+    }
+
+    function formatNewTextForInsertion(text) {
+      // Check if text contains bullet points or numbered lists
+      const lines = text.split('\n');
+      let formatted = '';
+      
+      for (let line of lines) {
+        line = line.trim();
+        if (!line) {
+          formatted += '<br>';
+          continue;
+        }
+        
+        // Check if it's a bullet point
+        if (line.match(/^[•\-\*]/)) {
+          formatted += `<div style="margin-left:15px;margin-bottom:8px">${escapeHtml(line)}</div>`;
+        }
+        // Check if it's a numbered item
+        else if (line.match(/^\d+\./)) {
+          formatted += `<div style="margin-left:15px;margin-bottom:8px">${escapeHtml(line)}</div>`;
+        }
+        // Check if it's a header (all caps with more than 3 chars)
+        else if (line === line.toUpperCase() && line.length > 3) {
+          formatted += `<div style="color:#4d9eff;font-size:16px;font-weight:bold;margin:20px 0 12px 0;padding-bottom:8px;border-bottom:2px solid #2a2f4a;">${escapeHtml(line)}</div>`;
+        }
+        // Regular paragraph
+        else {
+          formatted += `${escapeHtml(line)}<br>`;
+        }
+      }
+      
+      return formatted;
+    }
+
     async function getSingleSuggestion(suggestionType = 'improve') {
       try {
         const resp = await fetch('/api/get-ai-suggestion/', {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ session_id: sessionId, selected_text: selectedText, suggestion_type: suggestionType, multiple: false })
         });
         const data = await resp.json();
@@ -971,8 +2121,8 @@
       try {
         document.getElementById('suggestionOptions').style.display = 'none';
         const resp = await fetch('/api/get-ai-suggestion/', {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ session_id: sessionId, selected_text: selectedText, multiple: true })
         });
         const data = await resp.json();
@@ -989,8 +2139,8 @@
 
     function displayMultipleSuggestions(suggestions) {
       const html = suggestions.map((sug, idx) => `
-        <div class="suggestion-option ${idx===0?'selected':''}" data-suggestion="${escapeHtml(sug.text)}" onclick="selectSuggestionOption(this)">
-          <div class="suggestion-label">Option ${sug.id || (idx+1)} - ${sug.type || 'Suggestion'}</div>
+        <div class="suggestion-option ${idx === 0 ? 'selected' : ''}" data-suggestion="${escapeHtml(sug.text)}" onclick="selectSuggestionOption(this)">
+          <div class="suggestion-label">Option ${sug.id || (idx + 1)} - ${sug.type || 'Suggestion'}</div>
           <div>${escapeHtml(sug.text)}</div>
         </div>
       `).join('');
@@ -1028,21 +2178,18 @@
     function closeSuggestion() {
       suggestionPopup.classList.remove('active');
       document.getElementById('suggestionOptions').style.display = 'flex';
-      try{ window.getSelection().removeAllRanges(); }catch(e){}
+      try { window.getSelection().removeAllRanges(); } catch (e) { }
     }
 
-    function showNotification(message, type='info'){
+    function showNotification(message, type = 'info') {
       const notification = document.createElement('div');
-      notification.style.cssText = `position:fixed;top:20px;right:20px;padding:15px 20px;background:${type==='success'?'#00c853':'#4d9eff'};color:white;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.3);z-index:9999;font-weight:600;`;
+      notification.style.cssText = `position:fixed;top:20px;right:20px;padding:15px 20px;background:${type === 'success' ? '#00c853' : '#4d9eff'};color:white;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.3);z-index:9999;font-weight:600;`;
       notification.textContent = message;
       document.body.appendChild(notification);
-      setTimeout(()=>{ notification.style.opacity = '0'; setTimeout(()=>notification.remove(),300); }, 2500);
+      setTimeout(() => { notification.style.opacity = '0'; setTimeout(() => notification.remove(), 300); }, 2500);
     }
 
-    // ---------------------------
-    // Product loading
-    // ---------------------------
-    async function loadProducts(){
+    async function loadProducts() {
       console.log('🔍 Loading products...');
       const productsList = document.getElementById('productsList');
       try {
@@ -1076,7 +2223,7 @@
       }
     }
 
-    function toggleProduct(productId){
+    function toggleProduct(productId) {
       const checkbox = document.getElementById(`check-${productId}`);
       const productDiv = document.getElementById(`product-${productId}`);
       if (!checkbox) return;
@@ -1090,9 +2237,6 @@
       console.log('Selected products:', selectedProducts);
     }
 
-    // ---------------------------
-    // File uploads
-    // ---------------------------
     async function handlePDFUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -1102,7 +2246,7 @@
       try {
         const formData = new FormData();
         formData.append('file', file);
-        const resp = await fetch('/api/upload-file/', { method:'POST', body: formData });
+        const resp = await fetch('/api/upload-file/', { method: 'POST', body: formData });
         const data = await resp.json();
         if (data.success) {
           statusDiv.dataset.extractedText = data.extracted_text;
@@ -1125,7 +2269,7 @@
       try {
         const formData = new FormData();
         formData.append('audio', file);
-        const resp = await fetch('/api/upload-audio/', { method:'POST', body: formData });
+        const resp = await fetch('/api/upload-audio/', { method: 'POST', body: formData });
         const data = await resp.json();
         if (data.success) {
           statusDiv.innerHTML = `<div class="uploaded-file">🎤 ${escapeHtml(data.filename)}<button class="remove-btn" onclick="clearAudioUpload()">×</button></div>`;
@@ -1152,40 +2296,40 @@
       } finally { showLoading(false); }
     }
 
-    function clearPDFUpload(){ 
+    function clearPDFUpload() {
       const statusDiv = document.getElementById('pdfUploadStatus');
       delete statusDiv.dataset.extractedText;
-      document.getElementById('pdfInput').value=''; 
-      statusDiv.innerHTML=''; 
-    }
-    
-    function clearAudioUpload(){ 
-      document.getElementById('audioInput').value=''; 
-      document.getElementById('audioUploadStatus').innerHTML=''; 
-    }
-    
-    function showLoading(show){ 
-      loadingOverlay.classList.toggle('active', !!show); 
+      document.getElementById('pdfInput').value = '';
+      statusDiv.innerHTML = '';
     }
 
-    userInput.addEventListener('input', function(){ 
-      this.style.height='auto'; 
-      this.style.height = (this.scrollHeight) + 'px'; 
-    });
-    
-    userInput.addEventListener('keydown', function(e){ 
-      if (e.key === 'Enter' && !e.shiftKey){ 
-        e.preventDefault(); 
-        sendMessage(); 
-      } 
+    function clearAudioUpload() {
+      document.getElementById('audioInput').value = '';
+      document.getElementById('audioUploadStatus').innerHTML = '';
+    }
+
+    function showLoading(show) {
+      loadingOverlay.classList.toggle('active', !!show);
+    }
+
+    userInput.addEventListener('input', function () {
+      this.style.height = 'auto';
+      this.style.height = (this.scrollHeight) + 'px';
     });
 
-    function updateProgressStep(step){
+    userInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    function updateProgressStep(step) {
       document.querySelectorAll('.progress-item').forEach(item => item.classList.remove('active'));
       document.getElementById(`step${step}`)?.classList.add('active');
     }
 
-    function addMessage(content, isBot=false, isHtml=false){
+    function addMessage(content, isBot = false, isHtml = false) {
       const messageDiv = document.createElement('div');
       messageDiv.className = `chat-message ${isBot ? '' : 'user-message'}`;
       messageDiv.innerHTML = `<div class="message-icon ${isBot ? 'bot-icon' : 'user-icon'}">${isBot ? '🤖' : '👤'}</div><div class="message-content">${isHtml ? content : escapeHtml(content)}</div>`;
@@ -1193,13 +2337,13 @@
       scrollToBottom();
     }
 
-    function escapeHtml(text){
-      const div = document.createElement('div'); 
-      div.textContent = text; 
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
       return div.innerHTML;
     }
 
-    function addEditableContent(content, onSave){
+    function addEditableContent(content, onSave) {
       const id = 'edit_' + Date.now();
       const formatted = formatContent(content);
       const html = `<div class="editable-box" id="${id}"><button class="edit-btn-icon" onclick="startEdit('${id}')">✎</button><div class="content-display">${formatted}</div><div class="content-editor" style="display:none"><textarea class="edit-textarea">${escapeHtml(content)}</textarea><div class="edit-actions"><button class="btn btn-success" onclick="saveEdit('${id}')">✓ Save Changes</button><button class="btn btn-secondary" onclick="cancelEdit('${id}')">✗ Cancel</button></div></div></div>`;
@@ -1221,30 +2365,30 @@
       return formatted;
     }
 
-    function startEdit(id){
-      const box = document.getElementById(id); 
-      if(!box) return;
+    function startEdit(id) {
+      const box = document.getElementById(id);
+      if (!box) return;
       box.querySelector('.content-display').style.display = 'none';
       box.querySelector('.content-editor').style.display = 'block';
       box.querySelector('.edit-btn-icon').style.display = 'none';
       box.querySelector('.edit-textarea').focus();
     }
-    
-    function cancelEdit(id){
-      const box = document.getElementById(id); 
-      if(!box) return;
+
+    function cancelEdit(id) {
+      const box = document.getElementById(id);
+      if (!box) return;
       box.querySelector('.content-display').style.display = 'block';
       box.querySelector('.content-editor').style.display = 'none';
       box.querySelector('.edit-btn-icon').style.display = 'block';
     }
-    
-    async function saveEdit(id){
-      const box = document.getElementById(id); 
-      if(!box) return;
+
+    async function saveEdit(id) {
+      const box = document.getElementById(id);
+      if (!box) return;
       const newContent = box.querySelector('.edit-textarea').value.trim();
-      if (!newContent) { 
-        alert('Content cannot be empty!'); 
-        return; 
+      if (!newContent) {
+        alert('Content cannot be empty!');
+        return;
       }
       box.querySelector('.content-display').innerHTML = formatContent(newContent);
       cancelEdit(id);
@@ -1257,32 +2401,28 @@
       }
     }
 
-    function showTyping(show){ 
-      typingIndicator.classList.toggle('active', !!show); 
-      if (show) scrollToBottom(); 
-    }
-    
-    function scrollToBottom(){ 
-      setTimeout(()=>{ 
-        chatArea.scrollTop = chatArea.scrollHeight; 
-      }, 100); 
-    }
-    
-    function disableInput(disabled){ 
-      userInput.disabled = disabled; 
-      sendBtn.disabled = disabled; 
+    function showTyping(show) {
+      typingIndicator.classList.toggle('active', !!show);
+      if (show) scrollToBottom();
     }
 
-    // ---------------------------
-    // FIXED sendMessage - handles both pre and post preview clarifications
-    // ---------------------------
+    function scrollToBottom() {
+      setTimeout(() => {
+        chatArea.scrollTop = chatArea.scrollHeight;
+      }, 100);
+    }
+
+    function disableInput(disabled) {
+      userInput.disabled = disabled;
+      sendBtn.disabled = disabled;
+    }
+
     async function sendMessage() {
       const message = userInput.value.trim();
       const highlights = document.getElementById('highlightInput').value.trim();
-      
+
       if (!message) return;
-      
-      // Handle POST-PREVIEW clarification answers (OLD SYSTEM)
+
       if (conversationState === 'clarifications') {
         addMessage(message, false);
         userInput.value = '';
@@ -1294,56 +2434,49 @@
         disableInput(false);
         return;
       }
-      
-      // Handle INITIAL INPUT - Start new project with PRE-preview questions (NEW SYSTEM)
+
       if (conversationState === 'initial') {
-        // Get PDF text if uploaded
         let pdfText = '';
         const pdfStatus = document.getElementById('pdfUploadStatus');
         if (pdfStatus && pdfStatus.dataset.extractedText) {
           pdfText = pdfStatus.dataset.extractedText;
         }
-        
-        // Display message
+
         let displayMessage = message;
         if (highlights) displayMessage += "\n\nHighlight Points:\n" + highlights;
         addMessage(displayMessage, false);
-        userInput.value = ''; 
-        document.getElementById('highlightInput').value = ''; 
+        userInput.value = '';
+        document.getElementById('highlightInput').value = '';
         userInput.style.height = 'auto';
-        
-        disableInput(true); 
+
+        disableInput(true);
         showTyping(true);
-        
+
         try {
-          // Step 1: Initiate project and get PRE-preview clarification questions
           const response = await fetch('/api/initiate-project/', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               raw_input: message,
               highlight_points: highlights,
               pdf_text: pdfText
             })
           });
-          
+
           const data = await response.json();
-          
+
           if (data.success) {
             currentSessionId = data.session_id;
-            sessionId = data.session_id; // Set both for compatibility
+            sessionId = data.session_id;
             clarificationQuestionsData = data.questions;
-            
+
             showTyping(false);
-            
-            // Show PRE-preview clarification modal
+
             displayClarificationModal(data.questions);
-            
-            // Don't change state yet - will change after modal submission
           } else {
             throw new Error(data.error || 'Failed to initiate project');
           }
-          
+
         } catch (err) {
           showTyping(false);
           addMessage('Error: ' + err.message, true);
@@ -1354,39 +2487,35 @@
       }
     }
 
-    // ---------------------------
-    // Preview acceptance and POST-preview clarifications
-    // ---------------------------
-    async function acceptPreview(){
+    async function acceptPreview() {
       addMessage('Preview approved', false);
       updateProgressStep(3);
-      
-      // Change state to clarifications for POST-preview questions
+
       conversationState = 'clarifications';
-      
+
       showTyping(true);
       await askClarification();
       showTyping(false);
     }
 
-    async function askClarification(){
+    async function askClarification() {
       try {
         const response = await fetch('/api/get-clarifications/', {
-          method:'POST', 
-          headers:{'Content-Type':'application/json'},
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ session_id: sessionId })
         });
         const data = await response.json();
-        
+
         if (data.questions && data.questions.includes('NO_MORE_QUESTIONS')) {
           addMessage('Perfect! I have all the information I need. Let me find solutions...', true);
-          updateProgressStep(3); 
-          showTyping(true); 
-          await loadRecommendations(); 
-          showTyping(false); 
+          updateProgressStep(3);
+          showTyping(true);
+          await loadRecommendations();
+          showTyping(false);
           return;
         }
-        
+
         addMessage(`❓ ${data.questions}`, true);
         conversationState = 'clarifications';
       } catch (err) {
@@ -1401,23 +2530,23 @@
       let question = 'Question';
       for (let i = allMessages.length - 1; i >= 0; i--) {
         const text = allMessages[i].textContent;
-        if (text && text.includes('❓')) { 
-          question = text.replace('❓','').trim(); 
-          break; 
+        if (text && text.includes('❓')) {
+          question = text.replace('❓', '').trim();
+          break;
         }
       }
-      
+
       try {
-        await fetch('/api/save-clarification/', { 
-          method:'POST', 
-          headers:{'Content-Type':'application/json'}, 
-          body: JSON.stringify({ 
-            session_id: sessionId, 
-            question: question, 
-            answer: answer 
-          }) 
+        await fetch('/api/save-clarification/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            session_id: sessionId,
+            question: question,
+            answer: answer
+          })
         });
-        
+
         addMessage('Thank you! Checking if I need more info...', true);
         showTyping(true);
         await askClarification();
@@ -1428,17 +2557,11 @@
       }
     }
 
-    // ---------------------------
-    // Recommendations
-    // ---------------------------
-        // ---------------------------
-    // Recommendations
-    // ---------------------------
-    async function loadRecommendations(){
+    async function loadRecommendations() {
       try {
         const response = await fetch('/api/get-recommendations/', {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ session_id: sessionId })
         });
         const data = await response.json();
@@ -1448,17 +2571,16 @@
         let internalText = typeof data.internal === 'string' ? data.internal : String(data.internal || '');
         let externalText = typeof data.external === 'string' ? data.external : String(data.external || '');
 
-        // NEW: Separate the recommendations from the confirmation question
         let confirmationQuestion = "Shall I proceed with these suggestions, or would you like to review/add other products?";
         const parts = internalText.split('---');
         if (parts.length > 1) {
-            internalText = parts[0].trim();
-            confirmationQuestion = parts[1].trim();
+          internalText = parts[0].trim();
+          confirmationQuestion = parts[1].trim();
         }
 
-        internalRecommendations = internalText.split('\n').filter(l=>l.trim());
-        externalRecommendations = externalText.split('\n').filter(l=>l.trim());
-        selectedInternal = [...internalRecommendations]; // Pre-select AI suggestions by default
+        internalRecommendations = internalText.split('\n').filter(l => l.trim());
+        externalRecommendations = externalText.split('\n').filter(l => l.trim());
+        selectedInternal = [...internalRecommendations];
         selectedExternal = [...externalRecommendations];
 
         if (selectedProducts.length > 0) {
@@ -1470,7 +2592,7 @@
         if (internalRecommendations.length > 0) {
           addMessage('<strong>🏢 AI Recommended Internal Solutions:</strong>', true, true);
           addEditableContent(internalRecommendations.join('\n'), async (newContent) => {
-            internalRecommendations = newContent.split('\n').filter(l=>l.trim());
+            internalRecommendations = newContent.split('\n').filter(l => l.trim());
             selectedInternal = [...internalRecommendations];
             addMessage('Internal recommendations updated!', true);
           });
@@ -1485,7 +2607,6 @@
           });
         }
 
-        // NEW: Ask for confirmation instead of showing the "Generate" button directly
         const confirmationHtml = `
           <div class="message-content">
               <p>${confirmationQuestion}</p>
@@ -1504,47 +2625,35 @@
       }
     }
 
-    /**
-     * NEW FUNCTION: To handle the "Review/Add Products" button click.
-     * It guides the user to the product list and provides a final button to proceed.
-     */
     function reviewProducts() {
-        addMessage("Of course. Please use the 'Available Internal Products' list on the right to select or deselect products. When you're ready, click 'Generate Concept Note' below.", true);
+      addMessage("Of course. Please use the 'Available Internal Products' list on the right to select or deselect products. When you're ready, click 'Generate Concept Note' below.", true);
 
-        // Highlight the right sidebar to draw the user's attention
-        const rightSidebar = document.querySelector('.right-sidebar');
-        rightSidebar.style.transition = 'all 0.3s ease-in-out';
-        rightSidebar.style.boxShadow = '0 0 25px rgba(77, 158, 255, 0.5)';
-        rightSidebar.style.borderColor = '#4d9eff';
-        setTimeout(() => {
-            rightSidebar.style.boxShadow = '';
-            rightSidebar.style.borderColor = '';
-        }, 2500); // Highlight lasts for 2.5 seconds
+      const rightSidebar = document.querySelector('.right-sidebar');
+      rightSidebar.style.transition = 'all 0.3s ease-in-out';
+      rightSidebar.style.boxShadow = '0 0 25px rgba(77, 158, 255, 0.5)';
+      rightSidebar.style.borderColor = '#4d9eff';
+      setTimeout(() => {
+        rightSidebar.style.boxShadow = '';
+        rightSidebar.style.borderColor = '';
+      }, 2500);
 
-        // Show a final button to proceed after they've made their selections
-        const finalBtnHtml = `<div class="action-buttons"><button class="action-btn" onclick="generateFinalNote()">📄 Generate Concept Note</button></div>`;
-        addMessage(finalBtnHtml, true, true);
+      const finalBtnHtml = `<div class="action-buttons"><button class="action-btn" onclick="generateFinalNote()">📄 Generate Concept Note</button></div>`;
+      addMessage(finalBtnHtml, true, true);
     }
 
-    // ---------------------------
-    // Final concept note generation
-    // This function is now called by either of the new confirmation buttons.
-    // No changes are needed in this function itself.
-    // ---------------------------
-    async function generateFinalNote(){
+    async function generateFinalNote() {
       addMessage('Generating the concept note with the selected solutions...', false);
       updateProgressStep(4);
       showTyping(true);
       disableInput(true);
 
       try {
-        // This logic correctly combines manually checked products with AI suggestions
         const userSelectedProducts = allProducts.filter(p => selectedProducts.includes(p.id)).map(p => p.name);
         const allInternalSolutions = [...new Set([...userSelectedProducts, ...selectedInternal])];
 
         const response = await fetch('/api/generate-final-note/', {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             session_id: sessionId,
             selected_internal: allInternalSolutions,
@@ -1575,106 +2684,54 @@
         disableInput(false);
       }
     }
-    // ---------------------------
-    // Final concept note generation
-    // ---------------------------
-    async function generateFinalNote(){
-      addMessage('Generate concept note', false);
-      updateProgressStep(4);
-      showTyping(true);
-      disableInput(true);
-      
-      try {
-        const userSelectedProducts = allProducts.filter(p => selectedProducts.includes(p.id)).map(p => p.name);
-        const allInternalSolutions = [...new Set([...userSelectedProducts, ...selectedInternal])];
-        
-        const response = await fetch('/api/generate-final-note/', {
-          method:'POST', 
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ 
-            session_id: sessionId, 
-            selected_internal: allInternalSolutions, 
-            selected_external: selectedExternal 
-          })
-        });
-        
-        const data = await response.json();
-        showTyping(false);
-        
-        addMessage('🎉 Your concept note is ready! Select any text to refine it with AI suggestions.', true, true);
-        addEditableContent(data.concept_note, async (newContent) => { 
-          window.finalConceptNote = newContent; 
-          addMessage('Concept note updated!', true); 
-        });
-        
-        window.finalConceptNote = data.concept_note;
-        
-        const actionsHtml = `<div style="display:flex;gap:10px;margin-top:15px"><button class="btn btn-success" onclick="downloadPDF()">⬇ Download PDF</button><button class="btn btn-secondary" onclick="resetAndReload()">🔄 New Project</button></div>`;
-        addMessage(actionsHtml, true, true);
-        conversationState = 'completed';
-        
-      } catch (err) {
-        console.error('Error:', err);
-        showTyping(false);
-        addMessage('Error generating concept note: ' + (err.message || err), true);
-      } finally { 
-        disableInput(false); 
-      }
-    }
 
-    // ---------------------------
-    // PDF Download
-    // ---------------------------
-    async function downloadPDF(){
-      if (!window.finalConceptNote || !sessionId) { 
-        alert('No concept note available to download!'); 
-        return; 
+    async function downloadPDF() {
+      if (!window.finalConceptNote || !sessionId) {
+        alert('No concept note available to download!');
+        return;
       }
-      
+
       showLoading(true);
-      
+
       try {
         const resp = await fetch('/api/download-pdf/', {
-          method:'POST', 
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ 
-            session_id: sessionId, 
-            concept_note: window.finalConceptNote 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            session_id: sessionId,
+            concept_note: window.finalConceptNote
           })
         });
-        
+
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        
+
         const contentType = resp.headers.get('content-type') || '';
         if (!contentType.includes('application/pdf')) {
           const json = await resp.json();
           throw new Error(json.error || 'Invalid response from server');
         }
-        
+
         const blob = await resp.blob();
         if (blob.size === 0) throw new Error('PDF file is empty');
-        
+
         const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a'); 
-        a.href = url; 
-        a.download = `concept_note_${sessionId}.pdf`; 
-        document.body.appendChild(a); 
-        a.click(); 
-        a.remove(); 
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `concept_note_${sessionId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
         window.URL.revokeObjectURL(url);
-        
+
         addMessage('✅ PDF downloaded successfully!', true);
       } catch (err) {
         console.error('Error downloading PDF:', err);
         addMessage('❌ Error downloading PDF: ' + (err.message || err), true);
-      } finally { 
-        showLoading(false); 
+      } finally {
+        showLoading(false);
       }
     }
 
-    // ---------------------------
-    // Reset flow for new project
-    // ---------------------------
     function resetConversationFlow() {
       conversationState = 'initial';
       sessionId = null;
@@ -1696,10 +2753,7 @@
       location.reload();
     }
 
-    // ---------------------------
-    // Draggable suggestion popup
-    // ---------------------------
-    function initSuggestionDrag(){
+    function initSuggestionDrag() {
       const header = suggestionPopup.querySelector('.suggestion-header');
       if (!header) return;
       let isDragging = false, offsetX = 0, offsetY = 0;
@@ -1722,7 +2776,7 @@
         let left = e.clientX - offsetX;
         let top = e.clientY - offsetY;
         left = Math.max(8, Math.min(left, window.innerWidth - width - 8));
-        top  = Math.max(8, Math.min(top, window.innerHeight - height - 8));
+        top = Math.max(8, Math.min(top, window.innerHeight - height - 8));
         suggestionPopup.style.left = left + 'px';
         suggestionPopup.style.top = top + 'px';
         suggestionPopup.style.position = 'fixed';
@@ -1737,16 +2791,7 @@
         }
       });
     }
-
-
-    // ---------------------------
-    // Utility
-    // ---------------------------
-    function escapeHtmlSafe(text){
-      const d = document.createElement('div'); d.textContent = text; return d.innerHTML;
-    }
-    // alias used in many places
-    function escapeHtml(text){ return escapeHtmlSafe(text); }
   </script>
 </body>
+
 </html>

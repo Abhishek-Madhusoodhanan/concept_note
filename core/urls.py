@@ -15,5 +15,7 @@ urlpatterns = [
     path('api/initiate-project/', views.initiate_project, name='initiate_project'),
     path('api/save-pre-preview-answers/', views.save_pre_preview_answers, name='save_pre_preview_answers'),
     path('api/upload-supporting-document/', views.upload_supporting_document, name='upload_supporting_document'),
+    path('api/chat-edit-assistant/', views.chat_edit_assistant, name='chat_edit_assistant'),
+
     
 ]

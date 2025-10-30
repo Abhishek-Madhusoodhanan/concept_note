@@ -843,3 +843,28 @@ Return only the rewritten version, no explanations.
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
     else:
         return JsonResponse({'success': False, 'error': 'POST method required'}, status=405)
+@csrf_exempt
+def chat_edit_assistant(request):
+    """
+    Endpoint for the Mini Chatbot Assistant inside the UI.
+    Handles conversational text refinement requests.
+    """
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            user_message = data.get("message", "")
+            selected_text = data.get("selected_text", "")
+            conversation = data.get("conversation", [])
+
+            if not user_message or not selected_text:
+                return JsonResponse({"error": "Both 'message' and 'selected_text' are required."}, status=400)
+
+            from .ai_handler import conversational_edit_suggestion
+            ai_reply = conversational_edit_suggestion(user_message, selected_text, conversation)
+
+            return JsonResponse({"reply": ai_reply})
+        except Exception as e:
+            import traceback
+            print(traceback.format_exc())
+            return JsonResponse({"error": str(e)}, status=500)
+    return JsonResponse({"error": "POST method required"}, status=405)
